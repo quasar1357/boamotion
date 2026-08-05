@@ -92,6 +92,15 @@ Harmless for zero-padded names, which is probably what the client has — but ge
 wrong would silently scramble the frame order and corrupt every measurement, so it is
 worth the explicit test.
 
+## ImageJ numerical conventions
+
+Two places where the obvious numpy default differs from ImageJ:
+
+- **Standard deviation.** ImageJ divides by n-1, numpy by n. We pass `ddof=1`. Negligible
+  over a whole frame, but it is part of the mask threshold.
+- **Precision.** Image arithmetic in float32, matching ImageJ's 32-bit images; means
+  accumulate in float64, matching its double-precision statistics.
+
 ## Notebooks
 
 Notebooks are committed **with** their outputs, so the figures are visible on GitHub

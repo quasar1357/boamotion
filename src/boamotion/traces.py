@@ -14,7 +14,7 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def pixel_mask(
+def motion_pixel_mask(
     frames,
     reference_frame: int,
     *,

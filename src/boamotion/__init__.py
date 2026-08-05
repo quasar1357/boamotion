@@ -15,7 +15,7 @@ from boamotion.frames import FrameSequence, load_frames
 from boamotion.params import Params
 from boamotion.reference import detect_reference_frame
 from boamotion.synthetic import SyntheticRecording, synthetic_recording
-from boamotion.traces import pixel_mask
+from boamotion.traces import motion_pixel_mask
 
 __version__ = "0.0.1"
 
@@ -26,6 +26,6 @@ __all__ = [
     "__version__",
     "detect_reference_frame",
     "load_frames",
-    "pixel_mask",
+    "motion_pixel_mask",
     "synthetic_recording",
 ]
