@@ -121,6 +121,23 @@ on. The original macro name is documented alongside each parameter so the two ca
 cross-referenced. Keeping the original spellings would have mixed old and new naming in
 the same namespace and made a later rename harder to carry out safely.
 
+### D13 — Analysis functions take explicit keyword arguments, not the `Params` object · *taken*
+
+`detect_reference_frame(frames, *, speed_window=2, ...)` rather than
+`detect_reference_frame(frames, params)`. Each function then states exactly what it
+depends on and can be used without knowing about our configuration object. The
+user-facing class unpacks `Params` into these calls.
+
+**Trade-off:** defaults are written twice, so they could drift apart. A test introspects
+every function's signature and asserts each default equals the matching `Params` field,
+which turns drift into a CI failure rather than a silent inconsistency.
+
+### D14 — The user-facing class is called `Boa` · *taken*
+
+`Boa("recordings/A001", framerate=25).run()`. Short, memorable, and unambiguous inside a
+package called `boamotion`. `Recording` was rejected because `FrameSequence` and
+`SyntheticRecording` already occupy that concept.
+
 ---
 
 ## 2. Open questions for the client

@@ -92,6 +92,36 @@ Harmless for zero-padded names, which is probably what the client has — but ge
 wrong would silently scramble the frame order and corrupt every measurement, so it is
 worth the explicit test.
 
+## Plan and progress
+
+One small, reviewable commit per step; notebook updates get their own commit.
+
+| | Step | |
+|---|---|---|
+| **A** | 1 Repo, licence, NOTES, DECISIONS | done |
+| | 2 Packaging, src layout, ruff | done |
+| | 3 GitHub Actions CI | done |
+| **B** | 4 `Params` | done |
+| | 5 TIFF sequence loader | done |
+| | 6 Synthetic recording | done |
+| **C** | 7 `detect_reference_frame` | done |
+| | 8 `motion_pixel_mask` | done |
+| | 9 `contraction_trace`, `speed_trace` | done |
+| | 10 `analyse_transients` — peaks, baselines, per-beat measures | **next** |
+| **D** | 11 `Result` object and the seven output files | |
+| | 12 The three figures | |
+| | 13 `Boa`, the user-facing class, and logging | |
+| **E** | 14 Validation against FIJI output | needs data |
+| | 15 Example notebook on the client's recording | needs data |
+| | — prototype complete — | |
+| **F** | 16 Other input formats: TIFF stacks, PNG, AVI | |
+| | 17 Gaussian blur, ROI, interactive reference picking | |
+| | 18 Batch driver and CLI | |
+| | 19 SLURM array job | |
+| | 20 Performance work, if profiling justifies it | |
+
+Modules still to come: `transients.py` (step 10), `result.py` (11 and 12), `analysis.py` (13).
+
 ## ImageJ numerical conventions
 
 Two places where the obvious numpy default differs from ImageJ:
