@@ -166,10 +166,23 @@ parameter does nothing. The method reduces to "take the `lowValueN`-th point clo
 the origin". This is the most consequential finding here, because the reference frame sets
 the baseline of the entire contraction trace.
 
+**Now confirmed in code.** On a recording constructed so the right answer is unambiguous,
+the corrected method picks the quiet, steady point while the original picks one with
+roughly twenty times as much motion. On our synthetic recording both still land on a
+resting frame, but on different ones. Tests pin the mechanism: the original's answer is
+always the `lowValueN`-th quietest candidate whatever the stability scores are, and
+`unitySelectionN` provably changes nothing.
+
 ### F2 — One-frame offset in the same routine · *minor*
 
 The motion trace is computed relative to `autoDetectStart` but then sliced with absolute
-indices, shifting the result by one frame.
+indices, so the chosen point is mapped back to a frame number without accounting for where
+the search began.
+
+**Observable consequence:** the corrected version reports the same physical frame no matter
+where the search window starts, while the original's answer moves with `autoDetectStart`.
+With the default of 1 the reported frame is one too low. A larger value shifts it further,
+which also means `autoDetectStart` was effectively unusable in the original.
 
 ### F3 — The peak threshold uses an arbitrary trace sample · *moderate*
 
