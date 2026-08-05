@@ -26,7 +26,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "ruff>=0.6"]
+dev = ["pytest>=7.0", "ruff>=0.6", "nbclient>=0.10"]
 
 [project.urls]
 Homepage = "https://github.com/quasar1357/boamotion"
