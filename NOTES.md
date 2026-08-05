@@ -92,23 +92,14 @@ Harmless for zero-padded names, which is probably what the client has — but ge
 wrong would silently scramble the frame order and corrupt every measurement, so it is
 worth the explicit test.
 
-## Deferred: conda `environment.yml`
+## The conda environment
 
-Not added yet — deferred until we know what the cluster actually expects. `pip install -e .`
-already works anywhere, since all five dependencies ship universal wheels and need no
-compiler.
+`environment.yml` is deliberately thin: conda provides only the interpreter, pip and
+`ipykernel`, and every actual dependency comes from `pyproject.toml` via `pip install -e
+.[dev]`. That keeps `pyproject.toml` the single source of truth, so the two files cannot
+drift apart.
 
-Reasons it might still be wanted: some HPC centres document conda as the supported route,
-and non-Python binaries (ffmpeg, if AVI support lands) install more cleanly through conda.
-
-If we add it, keep it thin so `pyproject.toml` stays the single source of truth for
-dependencies and the two files cannot drift apart:
-
-```yaml
-name: boamotion
-channels: [conda-forge]
-dependencies:
-  - python=3.12
-  - pip
-  - pip: ["-e ."]
-```
+Plain `pip install -e .[dev]` into a venv works just as well — all dependencies ship
+universal wheels and need no compiler. The conda file exists because that is the workflow
+here, and because non-Python binaries (ffmpeg, if AVI support lands) install more cleanly
+through conda.

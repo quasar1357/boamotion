@@ -10,6 +10,17 @@ from a notebook or a script, without FIJI and without a GUI.
 
 **Status: early development.** Nothing here is usable yet.
 
+## Development setup
+
+```bash
+conda env create -f environment.yml
+conda activate boamotion
+pytest
+```
+
+The environment carries only Python, pip and `ipykernel`; the dependencies themselves come
+from `pyproject.toml`. A virtual environment works equally well: `pip install -e ".[dev]"`.
+
 ## Project files
 
 - [`HOW_IT_WORKS.md`](HOW_IT_WORKS.md) — what the analysis computes and what each
