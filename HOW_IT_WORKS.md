@@ -83,7 +83,7 @@ mask addresses this:
 2. Keep a running pixel-wise **maximum** across the recording, giving a map of the most
    each pixel ever changed.
 3. Threshold that map at `mean + 1 standard deviation`.
-4. The result is a binary mask; the traces then count only the pixels inside it.
+4. The result is a binary mask; the traces then ignore whatever falls outside it.
 
 | Parameter | Effect |
 |---|---|
@@ -106,6 +106,12 @@ The only difference is what each frame is compared against. A fixed reference me
 **displacement from rest**, producing the contraction waveform. A reference that moves
 along with the frame measures **how fast the image is changing**, producing something
 close to the derivative.
+
+**The average is taken over the whole frame**, with excluded pixels counted as zero, not
+over the kept pixels alone. A mask covering a tenth of the frame therefore gives
+amplitudes roughly a tenth of the average change in the moving region. Amplitude depends
+on how much of the frame the mask keeps, which is a further reason absolute values cannot
+be compared between recordings. Timing measures are unaffected.
 
 One detail worth having in mind: the speed trace is also an absolute difference, so it is
 always positive. Each beat therefore produces **two** speed humps — one while contracting,

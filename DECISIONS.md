@@ -232,6 +232,18 @@ column name does say — but deselecting 10% would silently change the definitio
 headline measures. We keep the behaviour, require the levels to be given in ascending
 order, and document it.
 
+### F9 — Masked amplitudes depend on how much of the frame the mask keeps
+
+The mask is applied by multiplying the difference image, but the average that follows is
+taken over the *whole* frame rather than over the kept pixels. A mask covering a tenth of
+the frame therefore produces amplitudes roughly a tenth of the average change in the
+moving region.
+
+**Consequence:** contraction amplitudes are not comparable between recordings whose masks
+differ in coverage — the same tissue filling less of the field reads as a smaller
+contraction. Timing measures are unaffected. This is design rather than a bug, so we
+reproduce it in both modes.
+
 ---
 
 ## 4. Deferred — after the prototype

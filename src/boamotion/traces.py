@@ -75,8 +75,12 @@ def contraction_trace(
     """Measure how far each frame is from rest, one value per frame.
 
     Every frame except the reference is compared against it, and the mean absolute
-    difference over the frame is one point of the trace. This is the contraction
-    waveform; its units are arbitrary.
+    difference is one point of the trace. This is the contraction waveform; its units
+    are arbitrary.
+
+    The mean is taken over the *whole* frame with masked-out pixels counting as zero,
+    not over the kept pixels alone, matching the original. Amplitudes therefore scale
+    with how much of the frame the mask keeps.
 
     Args:
         frames: Anything indexable that yields 2-D frames, such as a FrameSequence.
