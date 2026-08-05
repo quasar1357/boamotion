@@ -92,6 +92,13 @@ Harmless for zero-padded names, which is probably what the client has — but ge
 wrong would silently scramble the frame order and corrupt every measurement, so it is
 worth the explicit test.
 
+## Notebooks
+
+Notebooks are committed **with** their outputs, so the figures are visible on GitHub
+without running anything. The cost is that outputs go stale silently when the code
+changes, and that diffs are large. Re-run a notebook end to end before committing changes
+that affect it.
+
 ## The conda environment
 
 `environment.yml` is deliberately thin: conda provides only the interpreter, pip and
