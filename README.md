@@ -1,5 +1,7 @@
 # boamotion
 
+[![CI](https://github.com/quasar1357/boamotion/actions/workflows/ci.yml/badge.svg)](https://github.com/quasar1357/boamotion/actions/workflows/ci.yml)
+
 A Python reimplementation of [MUSCLEMOTION](https://github.com/l-sala/MUSCLEMOTION), the
 ImageJ/FIJI macro that quantifies muscle contraction from video microscopy.
 
