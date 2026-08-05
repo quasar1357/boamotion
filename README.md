@@ -12,6 +12,9 @@ from a notebook or a script, without FIJI and without a GUI.
 
 ## Project files
 
+- [`HOW_IT_WORKS.md`](HOW_IT_WORKS.md) — what the analysis computes and what each
+  parameter changes.
+- [`notebooks/`](notebooks) — worked examples.
 - [`NOTES.md`](NOTES.md) — working notes on the original macro and this port.
 - [`DECISIONS.md`](DECISIONS.md) — design decisions, open questions and findings to
   discuss with the client.
