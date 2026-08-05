@@ -3,6 +3,8 @@
 A Python port of the MUSCLEMOTION ImageJ macro by van Meer, Sala and Burton.
 """
 
+from boamotion.params import Params
+
 __version__ = "0.0.1"
 
-__all__ = ["__version__"]
+__all__ = ["Params", "__version__"]

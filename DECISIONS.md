@@ -103,6 +103,24 @@ would be premature optimisation.
 We reproduce the original's seven output files and their names, so results can be diffed
 directly against FIJI output, and additionally write a tidy CSV and the parameter dump.
 
+### D11 — Frame numbers are 1-based · *proposed*
+
+Every parameter that refers to a frame (`reference_frame`, `ref_search_start`,
+`mask_start_frame`, …) counts from 1, matching FIJI and the manual. Internally the code
+converts to Python's 0-based indexing.
+
+**Trade-off:** this is mildly unusual for Python, where counting from 0 is the norm. We
+chose it because the alternative guarantees off-by-one confusion at exactly the moment it
+hurts most — when comparing our output against FIJI's, or when a user reads a frame number
+off a FIJI window and types it in. A frame number now means the same thing in both tools.
+
+### D12 — Parameter names follow Python conventions · *taken*
+
+`speedWindow` becomes `speed_window`, `PeakDetectionWindow` becomes `peak_window`, and so
+on. The original macro name is documented alongside each parameter so the two can be
+cross-referenced. Keeping the original spellings would have mixed old and new naming in
+the same namespace and made a later rename harder to carry out safely.
+
 ---
 
 ## 2. Open questions for the client
@@ -188,6 +206,18 @@ convention used in the field. We will keep it and document it.
 The macro remembers the last-used settings across sessions in ImageJ's preference store.
 Convenient, but it means an analysis cannot be reproduced from its outputs alone, and
 settings leak between unrelated projects. See D6.
+
+---
+
+### F8 — The first selected percentage silently defines three other measures
+
+The chosen percentage levels look like an independent list of extra outputs, but the
+*first* one does more: its crossing points on the two flanks are what "time-to-peak",
+"relaxation time" and "contraction duration" are measured from. With the usual selection
+starting at 10%, contraction duration is therefore measured 10% above baseline — which the
+column name does say — but deselecting 10% would silently change the definition of three
+headline measures. We keep the behaviour, require the levels to be given in ascending
+order, and document it.
 
 ---
 
