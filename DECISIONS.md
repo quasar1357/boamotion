@@ -168,7 +168,7 @@ the baseline of the entire contraction trace.
 
 **Now confirmed in code.** On a recording constructed so the right answer is unambiguous,
 the corrected method picks the quiet, steady point while the original picks one with
-roughly twenty times as much motion. On our synthetic recording both still land on a
+about twelve times as much motion. On our synthetic recording both still land on a
 resting frame, but on different ones. Tests pin the mechanism: the original's answer is
 always the `lowValueN`-th quietest candidate whatever the stability scores are, and
 `unitySelectionN` provably changes nothing.
