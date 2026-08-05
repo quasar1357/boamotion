@@ -1,7 +1,14 @@
 import numpy as np
 import pytest
 
-from boamotion import detect_reference_frame, load_frames, motion_pixel_mask, synthetic_recording
+from boamotion import (
+    contraction_trace,
+    detect_reference_frame,
+    load_frames,
+    motion_pixel_mask,
+    speed_trace,
+    synthetic_recording,
+)
 
 
 def frames_with_bright_pixels(spots, shape=(4, 4), value=1000.0):
@@ -130,3 +137,130 @@ def test_no_frames_left_to_accumulate():
     frames = frames_with_bright_pixels([[], [(0, 0)], [(3, 3)]])
     with pytest.raises(ValueError, match="no frames left"):
         motion_pixel_mask(frames, 1, mask_start_frame=3, mask_end_frame=2)
+
+
+def uniform_frames(values, shape=(2, 2)):
+    """One frame per value, every pixel set to it, so traces are computable by hand."""
+    stack = np.asarray(values, dtype=np.float32).reshape(-1, 1, 1)
+    return stack * np.ones((1, *shape), dtype=np.float32)
+
+
+def peak_indices(recording, reference_frame=1):
+    """Where the known peaks land in a trace, which omits the reference frame."""
+    positions = [i for i in range(recording.n_frames) if i != reference_frame - 1]
+    return [positions.index(frame - 1) for frame in recording.peak_frames]
+
+
+def test_contraction_is_computed_by_hand():
+    frames = uniform_frames([0, 10, 20, 5])
+    assert contraction_trace(frames, 1).tolist() == [10.0, 20.0, 5.0]
+
+
+def test_speed_compares_each_frame_with_a_later_one():
+    frames = uniform_frames([0, 10, 20, 5])
+    assert speed_trace(frames, 1, speed_window=1).tolist() == [10.0, 15.0]
+
+
+def test_the_reference_frame_is_left_out():
+    # With frame 2 as reference, the trace measures frames 1, 3 and 4 against it.
+    frames = uniform_frames([0, 10, 20, 5])
+    assert contraction_trace(frames, 2).tolist() == [10.0, 10.0, 5.0]
+
+
+def test_trace_lengths():
+    recording = synthetic_recording(noise=0.01, seed=0)
+    assert len(contraction_trace(recording.frames, 1)) == recording.n_frames - 1
+    assert len(speed_trace(recording.frames, 1, speed_window=2)) == recording.n_frames - 3
+
+
+def test_contraction_peaks_where_the_recording_was_built_to_peak():
+    recording = synthetic_recording(noise=0.01, seed=0)
+    mask = motion_pixel_mask(recording.frames, 1)
+    trace = contraction_trace(recording.frames, 1, mask=mask)
+    for expected in peak_indices(recording):
+        nearby = trace[expected - 5 : expected + 6]
+        assert int(np.argmax(nearby)) == 5
+
+
+def test_speed_dips_at_peak_contraction_and_rises_on_both_flanks():
+    # An absolute difference is always positive, so one beat gives two speed humps:
+    # one contracting, one relaxing, with a standstill between them.
+    recording = synthetic_recording(noise=0.01, seed=0)
+    mask = motion_pixel_mask(recording.frames, 1)
+    speed = speed_trace(recording.frames, 1, speed_window=2, mask=mask)
+    for peak in peak_indices(recording):
+        standstill = peak - 1  # speed_window=2 straddles the peak
+        assert speed[standstill] < speed[standstill - 3]
+        assert speed[standstill] < speed[standstill + 5]
+
+
+def test_legacy_scales_the_trace_by_255():
+    recording = synthetic_recording(noise=0.01, seed=0)
+    mask = motion_pixel_mask(recording.frames, 1)
+    legacy = contraction_trace(recording.frames, 1, mask=mask, legacy=True)
+    corrected = contraction_trace(recording.frames, 1, mask=mask, legacy=False)
+    assert np.allclose(legacy, corrected * 255.0)
+
+
+def test_legacy_changes_nothing_without_a_mask():
+    recording = synthetic_recording(noise=0.01, seed=0)
+    assert np.array_equal(
+        contraction_trace(recording.frames, 1, legacy=True),
+        contraction_trace(recording.frames, 1, legacy=False),
+    )
+
+
+def test_masking_lifts_the_trace_clear_of_the_noise_floor():
+    recording = synthetic_recording(noise=0.01, seed=0)
+    mask = motion_pixel_mask(recording.frames, 1)
+    rest = np.array(peak_indices(recording)) - 10
+    peak = np.array(peak_indices(recording))
+
+    whole = contraction_trace(recording.frames, 1)
+    kept = contraction_trace(recording.frames, 1, mask=mask)
+    assert whole[rest].mean() / whole[peak].mean() > 0.15
+    assert kept[rest].mean() / kept[peak].mean() < 0.06
+
+
+def test_a_wider_speed_window_measures_more_motion():
+    # More happens between frames further apart, so the trace spans a wider range.
+    # Only up to a point: past roughly a quarter of a beat it saturates and degrades.
+    recording = synthetic_recording(noise=0.01, seed=0)
+    mask = motion_pixel_mask(recording.frames, 1)
+    narrow = speed_trace(recording.frames, 1, speed_window=1, mask=mask)
+    wide = speed_trace(recording.frames, 1, speed_window=4, mask=mask)
+    assert np.ptp(wide) > 2 * np.ptp(narrow)
+
+
+def test_traces_from_disk_match_those_from_memory(tmp_path):
+    recording = synthetic_recording(noise=0.01, seed=0)
+    on_disk = load_frames(recording.write(tmp_path / "movie"))
+    assert np.allclose(contraction_trace(on_disk, 1), contraction_trace(recording.frames, 1))
+    assert np.allclose(speed_trace(on_disk, 1), speed_trace(recording.frames, 1))
+
+
+def test_traces_are_reported(caplog):
+    recording = synthetic_recording(noise=0.01, seed=0)
+    with caplog.at_level("INFO", logger="boamotion.traces"):
+        contraction_trace(recording.frames, 1)
+        speed_trace(recording.frames, 1)
+    assert "Contraction trace: 99 points" in caplog.text
+    assert "Speed trace: 97 points" in caplog.text
+
+
+def test_mask_of_the_wrong_size_is_rejected():
+    frames = uniform_frames([0, 10, 20])
+    with pytest.raises(ValueError, match="mask is"):
+        contraction_trace(frames, 1, mask=np.ones((5, 5), dtype=bool))
+
+
+def test_speed_window_must_fit_the_recording():
+    frames = uniform_frames([0, 10, 20])
+    with pytest.raises(ValueError, match="nothing to measure"):
+        speed_trace(frames, 1, speed_window=5)
+
+
+def test_speed_window_must_be_positive():
+    frames = uniform_frames([0, 10, 20])
+    with pytest.raises(ValueError, match="at least 1 frame"):
+        speed_trace(frames, 1, speed_window=0)

@@ -5,10 +5,18 @@ import inspect
 
 import pytest
 
-from boamotion import detect_reference_frame, motion_pixel_mask
+from boamotion import (
+    contraction_trace,
+    detect_reference_frame,
+    motion_pixel_mask,
+    speed_trace,
+)
 from boamotion.params import Params
 
-FUNCTIONS = [detect_reference_frame, motion_pixel_mask]
+FUNCTIONS = [detect_reference_frame, motion_pixel_mask, contraction_trace, speed_trace]
+
+# Arguments that carry data rather than a setting, so Params does not define them.
+DATA_ARGUMENTS = {"mask"}
 
 
 def defaults_of(function):
@@ -32,5 +40,5 @@ def test_defaults_match_params(function):
 
 @pytest.mark.parametrize("function", FUNCTIONS, ids=lambda f: f.__name__)
 def test_argument_names_exist_on_params(function):
-    unknown = set(defaults_of(function)) - {field for field in Params().to_dict()}
+    unknown = set(defaults_of(function)) - set(Params().to_dict()) - DATA_ARGUMENTS
     assert not unknown, f"{function.__name__} takes arguments Params does not define: {unknown}"
