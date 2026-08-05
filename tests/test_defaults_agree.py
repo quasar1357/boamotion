@@ -5,10 +5,10 @@ import inspect
 
 import pytest
 
-from boamotion import detect_reference_frame
+from boamotion import detect_reference_frame, pixel_mask
 from boamotion.params import Params
 
-FUNCTIONS = [detect_reference_frame]
+FUNCTIONS = [detect_reference_frame, pixel_mask]
 
 
 def defaults_of(function):

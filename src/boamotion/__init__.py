@@ -8,12 +8,14 @@ Modules, in the order the analysis uses them:
     frames      reading a recording from disk
     synthetic   a generated recording with known ground truth
     reference   stage 1 - choosing the reference frame
+    traces      stages 2 and 3 - pixel mask, contraction and speed
 """
 
 from boamotion.frames import FrameSequence, load_frames
 from boamotion.params import Params
 from boamotion.reference import detect_reference_frame
 from boamotion.synthetic import SyntheticRecording, synthetic_recording
+from boamotion.traces import pixel_mask
 
 __version__ = "0.0.1"
 
@@ -24,5 +26,6 @@ __all__ = [
     "__version__",
     "detect_reference_frame",
     "load_frames",
+    "pixel_mask",
     "synthetic_recording",
 ]
