@@ -127,14 +127,21 @@ def _unity_distance(motion: np.ndarray, shifted: np.ndarray) -> np.ndarray:
 def _select(window: np.ndarray, n_low_values: int, n_unity_values: int) -> int:
     """The method as documented: quietest points, then the most stable among them."""
     motion, shifted = window[:-1], window[1:]
+
+    # How far is each point from the origin, i.e. how quiet (= 1st criterion)
     radius = np.hypot(motion, shifted)
+    quietest = np.argsort(radius, kind="stable")[:n_low_values]  # Pick best n
 
-    quietest = np.argsort(radius, kind="stable")[:n_low_values]
+    # How far are they from the unity line, i.e. how stable
     unity = _unity_distance(motion[quietest], shifted[quietest])
-    finalists = quietest[np.argsort(unity, kind="stable")[:n_unity_values]]
+    steadiest = np.argsort(unity, kind="stable")[:n_unity_values]  # Pick best n
 
-    unity = _unity_distance(motion[finalists], shifted[finalists])
-    return int(finalists[np.argmin(motion[finalists] * shifted[finalists] * unity)])
+    # Positions within quietest, so the unity values above stay usable
+    finalists = quietest[steadiest]
+
+    # Score (= 3rd criterion) as product of motion, shifted and unsteadiness
+    score = motion[finalists] * shifted[finalists] * unity[steadiest]
+    return int(finalists[np.argmin(score)])  # Return the index of the 1 best
 
 
 def _select_legacy(window: np.ndarray, n_low_values: int, n_unity_values: int) -> int:
