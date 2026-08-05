@@ -244,6 +244,19 @@ differ in coverage — the same tissue filling less of the field reads as a smal
 contraction. Timing measures are unaffected. This is design rather than a bug, so we
 reproduce it in both modes.
 
+### F10 — The time axis closes the gap left by the reference frame
+
+The reference frame is removed from the stack before measuring, so the traces hold one
+point fewer than the recording. The two trace points either side of it are still adjacent
+in the trace but two sampling intervals apart in the recording — with frame 5 as
+reference, trace points 3 and 4 are frames 4 and 6. The time axis adds one interval per
+point regardless, so that step is drawn half its true length.
+
+**Consequence:** every point after the reference frame is placed one frame too early.
+Durations measured between two points are unaffected, since the shift cancels; absolute
+peak times after the reference are off by one frame. Small, and smaller still because the
+reference is usually near the start of the recording.
+
 ---
 
 ## 4. Deferred — after the prototype
