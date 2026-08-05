@@ -80,6 +80,18 @@ Applied from the start so the cluster route stays open without doing cluster wor
   the third dialog. Assuming defaults: no Gaussian blur, noise reduction on, automatic
   reference frame.
 
+## Frame ordering in image sequences
+
+The manual says image sequences are "ordered alphabetically", but the macro opens them
+with ImageJ's `sort` option, which sorts numbers embedded in file names *by value*. The
+two disagree whenever frame numbers are not zero-padded: alphabetically `frame10.tif`
+comes before `frame2.tif`. We follow the macro, not the manual, since that is what
+actually produced the client's existing results.
+
+Harmless for zero-padded names, which is probably what the client has — but getting it
+wrong would silently scramble the frame order and corrupt every measurement, so it is
+worth the explicit test.
+
 ## Deferred: conda `environment.yml`
 
 Not added yet — deferred until we know what the cluster actually expects. `pip install -e .`

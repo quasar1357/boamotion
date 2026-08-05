@@ -62,7 +62,7 @@ class Params:
 
     Compatibility:
         legacy: Reproduce the original macro's behaviour, including its known bugs.
-            See DECISIONS.md (D3, section 3) for what changes when this is False.
+            See DECISIONS.md for what changes when this is False.
     """
 
     # Recording
