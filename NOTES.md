@@ -79,3 +79,24 @@ Applied from the start so the cluster route stays open without doing cluster wor
 - The client's dialog-1 answers (frame rate aside) are unknown; the screenshot only shows
   the third dialog. Assuming defaults: no Gaussian blur, noise reduction on, automatic
   reference frame.
+
+## Deferred: conda `environment.yml`
+
+Not added yet — deferred until we know what the cluster actually expects. `pip install -e .`
+already works anywhere, since all five dependencies ship universal wheels and need no
+compiler.
+
+Reasons it might still be wanted: some HPC centres document conda as the supported route,
+and non-Python binaries (ffmpeg, if AVI support lands) install more cleanly through conda.
+
+If we add it, keep it thin so `pyproject.toml` stays the single source of truth for
+dependencies and the two files cannot drift apart:
+
+```yaml
+name: boamotion
+channels: [conda-forge]
+dependencies:
+  - python=3.12
+  - pip
+  - pip: ["-e ."]
+```
