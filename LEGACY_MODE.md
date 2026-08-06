@@ -13,10 +13,10 @@ remember why a function has two branches. Line numbers refer to
 one to the next. The nine below are F1 to F9 of the fourteen in `DECISIONS.md` — the ones
 that are quirks of the original's implementation.
 
-F1 to F7 are corrected by `legacy=False`, and run roughly in the order the analysis meets
-them: reference frame, then mask, then transients. F8 and F9 we reproduce in **both**
-modes, because they are definitions rather than mistakes and changing them would silently
-alter every result.
+All nine are implemented. F1 to F7 are corrected by `legacy=False`, and run roughly in the
+order the analysis meets them: reference frame, then mask, then transients. F8 and F9 we
+reproduce in **both** modes, because they are definitions rather than mistakes and
+changing them would silently alter every result.
 
 Three conventions to keep in mind while reading the excerpts. Arrays in the ImageJ macro
 language are **0-based**, but stack slices are **1-based**, and the macro mixes the two
@@ -29,17 +29,17 @@ do. It is what makes `100-percentages[m]+"-to-"+100-percentages[m]+" transient (
 produce `90-to-90 transient (ms)` rather than a type error partway through, and equally
 what makes the all-`+` expression in F2 print `511` instead of `52`.
 
-| F | Quirk | Impact | Status |
+| F | Quirk | Impact | Implemented in |
 |---|---|---|---|
-| F1 | [The unity-line filter never runs](#f1--the-unity-line-filter-never-runs) | significant | ported |
-| F2 | [The search start is not added back](#f2--the-search-start-is-not-added-back) | minor | ported |
-| F3 | [The mask loses its last frame](#f3--the-mask-loses-its-last-frame) | minor | ported |
-| F4 | [The mask holds 255, not 1](#f4--the-mask-holds-255-not-1) | constant factor | ported |
-| F5 | [The peak threshold indexes the trace with a frame number](#f5--the-peak-threshold-indexes-the-trace-with-a-frame-number) | moderate | ported |
-| F6 | [A single detected peak loses its baseline](#f6--a-single-detected-peak-loses-its-baseline) | edge case | ported |
-| F7 | [A baseline shortage narrows every later beat](#f7--a-baseline-shortage-narrows-every-later-beat) | moderate | ported |
-| F8 | [The peak window is a frame narrower than it reads](#f8--the-peak-window-is-a-frame-narrower-than-it-reads) | minor | ported |
-| F9 | [The first percentage defines three other measures](#f9--the-first-percentage-defines-three-other-measures) | by design | ported |
+| F1 | [The unity-line filter never runs](#f1--the-unity-line-filter-never-runs) | significant | `reference.py` `_select_legacy` |
+| F2 | [The search start is not added back](#f2--the-search-start-is-not-added-back) | minor | `reference.py` `detect_reference_frame` |
+| F3 | [The mask loses its last frame](#f3--the-mask-loses-its-last-frame) | minor | `traces.py` `_frames_to_use` |
+| F4 | [The mask holds 255, not 1](#f4--the-mask-holds-255-not-1) | constant factor | `traces.py` `_mask_weight` |
+| F5 | [The peak threshold indexes the trace with a frame number](#f5--the-peak-threshold-indexes-the-trace-with-a-frame-number) | moderate | `transients.py` `_zero_level` |
+| F6 | [A single detected peak loses its baseline](#f6--a-single-detected-peak-loses-its-baseline) | edge case | `transients.py` `_range_positions` |
+| F7 | [A baseline shortage narrows every later beat](#f7--a-baseline-shortage-narrows-every-later-beat) | moderate | `transients.py` `_legacy_flat_average` |
+| F8 | [The peak window is a frame narrower than it reads](#f8--the-peak-window-is-a-frame-narrower-than-it-reads) | minor | `transients.py` `_dominates_neighbours` |
+| F9 | [The first percentage defines three other measures](#f9--the-first-percentage-defines-three-other-measures) | by design | `transients.py` `measure_transients` |
 
 ---
 

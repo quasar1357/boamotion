@@ -137,6 +137,34 @@ Step 11 has to settle the original's output column names. The macro builds them 
 `100-percentages[m]+"-to-"+...`, which relies on `-` binding tighter than `+` in the
 macro language; worth confirming against real FIJI output when we have some.
 
+## Where each finding lives
+
+`DECISIONS.md` says what each finding is and `LEGACY_MODE.md` shows the original source.
+This says which code it touches. Two things are being tracked at once, so they get their
+own columns: whether we **correct** it, and whether it is **written** yet.
+
+| F | Where | Correct it? | Written |
+|---|---|---|---|
+| F1 | `reference.py` — `_select_legacy` vs `_select` | yes | step 7 |
+| F2 | `reference.py` — the frame mapping in `detect_reference_frame` | yes | step 7 |
+| F3 | `traces.py` — `_frames_to_use` | yes | step 8 |
+| F4 | `traces.py` — `_mask_weight` | yes | step 9 |
+| F5 | `transients.py` — `_zero_level` | yes | step 10a |
+| F6 | `transients.py` — `_range_positions` | yes | step 10a |
+| F7 | `transients.py` — `_legacy_flat_average` | yes | step 10a |
+| F8 | `transients.py` — `_dominates_neighbours` | no | step 10a |
+| F9 | `transients.py` — `measure_transients` | no | step 10b |
+| F10 | no code; it is the reasoning behind D4 | no | — |
+| F11 | `result.py` — the output column names | no | **step 11** |
+| F12 | `params.py` — superseded by `Params` and YAML, per D6 | no | step 4 |
+| F13 | `traces.py` — `_mean_change` averages the whole frame | no | step 9 |
+| F14 | `result.py` — the time axis, and the figures drawn on it | no | **step 12** |
+
+Two traps in reading this. "We do not correct it" does not mean there is nothing to write:
+F11 and F14 are behaviours we deliberately copy, and copying them is still work. And a
+finding's `legacy` branch sits in exactly one helper — F6 for instance branches only in
+`_range_positions`, even though the damage surfaces in `_steepest_rise`.
+
 ## Marking the `legacy` branches
 
 Every line that passes `legacy` down or branches on it carries a one-line note saying what
