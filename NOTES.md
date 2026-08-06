@@ -108,7 +108,8 @@ One small, reviewable commit per step; notebook updates get their own commit.
 | **C** | 7 `detect_reference_frame` | done |
 | | 8 `motion_pixel_mask` | done |
 | | 9 `contraction_trace`, `speed_trace` | done |
-| | 10 `analyse_transients` — peaks, baselines, per-beat measures | **next** |
+| | 10a `find_peaks` and `beat_baselines` | done |
+| | 10b `analyse_transients` — levels, flank crossings, per-beat table | **next** |
 | **D** | 11 `Result` object and the seven output files | |
 | | 12 The three figures | |
 | | 13 `Boa`, the user-facing class, and logging | |
@@ -121,7 +122,7 @@ One small, reviewable commit per step; notebook updates get their own commit.
 | | 19 SLURM array job | |
 | | 20 Performance work, if profiling justifies it | |
 
-Modules still to come: `transients.py` (step 10), `result.py` (11 and 12), `analysis.py` (13).
+Modules still to come: `result.py` (steps 11 and 12), `analysis.py` (13).
 
 ## ImageJ numerical conventions
 

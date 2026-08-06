@@ -1,0 +1,281 @@
+import logging
+
+import numpy as np
+import pytest
+
+from boamotion import (
+    beat_baselines,
+    contraction_trace,
+    find_peaks,
+    motion_pixel_mask,
+    synthetic_recording,
+)
+
+
+def beat_train(heights=(100.0, 100.0, 100.0, 100.0), period=25, rise=5, fall=8, rest=10.0):
+    """A triangular beat train, flat at `rest` between beats. Returns trace and peaks."""
+    trace = np.full(len(heights) * period, rest, dtype=float)
+    peaks = []
+    for beat, amplitude in enumerate(heights):
+        peak = beat * period + period // 2
+        peaks.append(peak)
+        trace[peak] = amplitude
+        for step in range(1, rise + 1):
+            trace[peak - rise + step - 1] = rest + (amplitude - rest) * step / (rise + 1)
+        for step in range(1, fall + 1):
+            trace[peak + step] = amplitude - (amplitude - rest) * step / fall
+    return trace, peaks
+
+
+def peak_indices(recording, reference_frame=1):
+    """Where the known peaks land in a trace, which omits the reference frame."""
+    positions = [i for i in range(recording.n_frames) if i != reference_frame - 1]
+    return [positions.index(frame - 1) for frame in recording.peak_frames]
+
+
+def synthetic_trace():
+    recording = synthetic_recording(noise=0.01, seed=0)
+    mask = motion_pixel_mask(recording.frames, 1)
+    return contraction_trace(recording.frames, 1, mask=mask), recording
+
+
+# --- finding the beats ---------------------------------------------------------------
+
+
+def test_peaks_are_found_where_the_beats_are():
+    trace, peaks = beat_train()
+    assert find_peaks(trace, reference_frame=0).tolist() == peaks
+
+
+def test_peaks_match_the_recording_they_were_built_into():
+    trace, recording = synthetic_trace()
+    found = find_peaks(trace, reference_frame=0, peak_window=16)
+    assert found.tolist() == peak_indices(recording)
+
+
+def test_a_wobble_below_the_threshold_is_not_a_beat():
+    trace, peaks = beat_train()
+    trace[3] = 20.0  # a local maximum, but only a ninth of the range above rest
+    assert find_peaks(trace, reference_frame=0).tolist() == peaks
+
+
+def test_a_taller_threshold_drops_the_smaller_beats():
+    trace, peaks = beat_train(heights=(100.0, 50.0, 100.0, 100.0))
+    assert find_peaks(trace, reference_frame=0).tolist() == peaks
+    assert find_peaks(trace, reference_frame=0, peak_threshold=60.0).tolist() == [
+        peaks[0],
+        peaks[2],
+        peaks[3],
+    ]
+
+
+# --- the two ways the peak window is narrower than it reads (F12) ---------------------
+
+
+def test_the_neighbourhood_reaches_one_point_less_far_than_the_window():
+    # With peak_window=20 a candidate is compared against +/- 9, not +/- 10, so a
+    # higher point exactly 10 away does not displace it.
+    trace = np.zeros(80)
+    trace[30], trace[40] = 50.0, 60.0
+    assert find_peaks(trace, reference_frame=0).tolist() == [30, 40]
+
+    trace = np.zeros(80)
+    trace[30], trace[39] = 50.0, 60.0
+    assert find_peaks(trace, reference_frame=0).tolist() == [39]
+
+
+def test_a_beat_near_the_end_of_the_trace_is_never_examined():
+    # The rule of thumb of 0.75 x frames per beat gives 18 here, which loses the fourth
+    # beat entirely: it sits within peak_window/2 + 1 of the end of the trace.
+    trace, recording = synthetic_trace()
+    expected = peak_indices(recording)
+    assert find_peaks(trace, reference_frame=0, peak_window=18).tolist() == expected[:-1]
+    assert find_peaks(trace, reference_frame=0, peak_window=16).tolist() == expected
+
+
+# --- the legacy zero level (F3) ------------------------------------------------------
+
+
+def test_the_legacy_zero_level_can_drop_a_genuine_beat():
+    trace, peaks = beat_train(heights=(100.0, 100.0, 50.0, 100.0))
+
+    # Corrected, the zero level is the lowest point of the trace and all four are found.
+    assert find_peaks(trace, reference_frame=0, legacy=False).tolist() == peaks
+
+    # The original indexes the trace with the frame number instead. Landing partway up
+    # a flank raises the level every beat is judged against, and the small one is lost.
+    on_a_flank = peaks[0] - 1
+    found = find_peaks(trace, reference_frame=on_a_flank, legacy=True)
+    assert found.tolist() == [peaks[0], peaks[1], peaks[3]]
+
+
+def test_the_two_modes_agree_when_the_reference_lands_on_rest():
+    trace, peaks = beat_train()
+    assert find_peaks(trace, reference_frame=0, legacy=True).tolist() == peaks
+    assert find_peaks(trace, reference_frame=0, legacy=False).tolist() == peaks
+
+
+# --- reporting and rejection ---------------------------------------------------------
+
+
+def test_an_odd_window_is_raised_to_the_next_even_one(caplog):
+    trace, peaks = beat_train()
+    with caplog.at_level(logging.WARNING):
+        found = find_peaks(trace, reference_frame=0, peak_window=19)
+    assert found.tolist() == find_peaks(trace, reference_frame=0, peak_window=20).tolist()
+    assert "raised from 19 to 20" in caplog.text
+
+
+def test_peaks_are_reported(caplog):
+    trace, _ = beat_train()
+    with caplog.at_level(logging.INFO):
+        find_peaks(trace, reference_frame=0)
+    assert "Detected 4 peak(s)" in caplog.text
+
+
+def test_a_reference_frame_outside_the_trace_is_rejected():
+    trace, _ = beat_train()
+    with pytest.raises(ValueError, match="outside a trace"):
+        find_peaks(trace, reference_frame=len(trace))
+
+
+def test_a_window_below_two_is_rejected():
+    trace, _ = beat_train()
+    with pytest.raises(ValueError, match="at least 2"):
+        find_peaks(trace, reference_frame=0, peak_window=1)
+
+
+# --- baselines -----------------------------------------------------------------------
+
+
+def test_high_frequency_baseline_takes_the_lowest_point_before_the_beat():
+    trace, peaks = beat_train()
+    trace[peaks[1] - 3] = 4.0  # below the resting level, and inside the search range
+    baselines = beat_baselines(trace, peaks, high_freq_baseline=True)
+    assert baselines.tolist() == [10.0, 4.0, 10.0, 10.0]
+
+
+def test_a_dip_more_than_halfway_back_belongs_to_no_beat_at_all():
+    # Each beat looks back only as far as halfway to the previous one, and no beat
+    # looks forward, so the resting points in between are never examined.
+    trace, peaks = beat_train()
+    halfway = peaks[1] - (peaks[1] - peaks[0]) // 2
+
+    ignored = trace.copy()
+    ignored[halfway - 2] = 4.0
+    assert beat_baselines(ignored, peaks, high_freq_baseline=True).tolist() == [10.0] * 4
+
+    seen = trace.copy()
+    seen[halfway + 2] = 4.0
+    assert beat_baselines(seen, peaks, high_freq_baseline=True).tolist() == [
+        10.0,
+        4.0,
+        10.0,
+        10.0,
+    ]
+
+
+def test_flat_baseline_averages_the_quiet_points_before_the_beat():
+    trace, peaks = beat_train()
+    baselines = beat_baselines(trace, peaks, high_freq_baseline=False)
+    assert baselines.tolist() == pytest.approx([10.0] * 4)
+
+
+def test_both_baseline_modes_agree_on_a_flat_rest():
+    trace, _ = synthetic_trace()
+    peaks = find_peaks(trace, reference_frame=0, peak_window=16)
+    lowest = beat_baselines(trace, peaks, high_freq_baseline=True)
+    flattest = beat_baselines(trace, peaks, high_freq_baseline=False)
+    assert flattest == pytest.approx(lowest, rel=0.1)
+
+
+def test_no_peaks_gives_no_baselines():
+    trace, _ = beat_train()
+    assert beat_baselines(trace, []).tolist() == []
+
+
+def test_baselines_are_reported(caplog):
+    trace, peaks = beat_train()
+    with caplog.at_level(logging.INFO):
+        beat_baselines(trace, peaks)
+    assert "Baselines for 4 beat(s)" in caplog.text
+
+
+# --- a lone peak loses its baseline (F4) ---------------------------------------------
+
+
+def test_a_lone_peak_gets_a_zero_baseline_in_legacy_mode():
+    trace, _ = synthetic_trace()
+    trace = trace[:40]
+    peak = find_peaks(trace, reference_frame=0, peak_window=16)
+    assert len(peak) == 1
+
+    # The appended phantom peak reverses the range the steepest rise is measured over,
+    # leaving it at zero, so no point can count as flat and the average is empty.
+    assert beat_baselines(trace, peak, high_freq_baseline=False, legacy=True).tolist() == [0.0]
+
+    # Corrected, the lone beat is simply the first beat, and its baseline is a genuine
+    # resting value rather than zero.
+    rest = trace[: peak[0] - 5]
+    corrected = beat_baselines(trace, peak, high_freq_baseline=False, legacy=False)
+    assert rest.min() <= corrected[0] <= rest.max()
+
+
+def test_a_lone_peak_is_unaffected_in_the_high_frequency_mode():
+    trace, _ = synthetic_trace()
+    trace = trace[:40]
+    peak = find_peaks(trace, reference_frame=0, peak_window=16)
+    for legacy in (True, False):
+        baseline = beat_baselines(trace, peak, high_freq_baseline=True, legacy=legacy)
+        assert baseline[0] == pytest.approx(trace[: peak[0]].min())
+
+
+# --- a baseline shortage narrows every later beat (F13) ------------------------------
+
+
+def drifting_rest_train():
+    """Two beats. The second rests on a gentle staircase, so how many points are
+    averaged changes the answer. Returns a trace whose first beat has no flat points
+    at all, and an otherwise identical one whose first beat rests quietly."""
+    trace, peaks = beat_train(heights=(100.0, 100.0), period=40)
+    first, second = peaks
+
+    for step, j in enumerate(range(second - 15, second - 5)):
+        trace[j] = 10.0 + 0.1 * step
+    calm = trace.copy()
+
+    # Everything before the first beat now alternates by more than the flatness
+    # threshold, so that beat offers nothing to average.
+    for j in range(first):
+        trace[j] = 10.0 + 5.0 * (j % 2)
+    return trace, calm, peaks
+
+
+def test_a_baseline_shortage_narrows_every_later_beat():
+    noisy, calm, peaks = drifting_rest_train()
+    narrowed = beat_baselines(noisy, peaks, high_freq_baseline=False, legacy=True)
+    intact = beat_baselines(calm, peaks, high_freq_baseline=False, legacy=True)
+
+    # No flat points before the first beat, so its own baseline collapses to zero.
+    assert narrowed[0] == 0.0
+    assert intact[0] != 0.0
+
+    # The second beat is identical in both traces, yet its baseline differs: the
+    # shortage assigned to the parameter itself, so fewer points are averaged from
+    # here on, and those reach less far back down the staircase.
+    assert narrowed[1] != pytest.approx(intact[1])
+    assert narrowed[1] > intact[1]
+
+
+def test_the_shortage_is_confined_to_its_own_beat_when_corrected():
+    noisy, calm, peaks = drifting_rest_train()
+    narrowed = beat_baselines(noisy, peaks, high_freq_baseline=False, legacy=False)
+    intact = beat_baselines(calm, peaks, high_freq_baseline=False, legacy=False)
+    assert narrowed[1] == pytest.approx(intact[1])
+
+
+def test_the_shortage_warning_names_the_beat_that_caused_it(caplog):
+    noisy, _, peaks = drifting_rest_train()
+    with caplog.at_level(logging.WARNING):
+        beat_baselines(noisy, peaks, high_freq_baseline=False, legacy=True)
+    assert "before peak 0" in caplog.text
