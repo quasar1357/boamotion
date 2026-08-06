@@ -1,7 +1,8 @@
 # Working notes
 
 Internal notes for developing `boamotion`. Client-facing material lives in
-[`DECISIONS.md`](DECISIONS.md).
+[`DECISIONS.md`](DECISIONS.md); the original macro's quirks are worked through against its
+own source in [`LEGACY_MODE.md`](LEGACY_MODE.md).
 
 ## Source material
 

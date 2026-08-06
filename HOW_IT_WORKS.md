@@ -211,3 +211,8 @@ be reproduced to match the original's numbers.
 
 In practice items 1 and 2 can genuinely change results, item 3 shifts them slightly, item 4
 affects edge cases only, item 5 depends on settings, and item 6 is a constant factor.
+A seventh, smaller item: when a mask end frame is set explicitly, that frame itself does not
+contribute to the mask.
+
+Each of these is shown in the original's own source, with the mechanism worked through, in
+[`LEGACY_MODE.md`](LEGACY_MODE.md).

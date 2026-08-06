@@ -170,6 +170,9 @@ Observations from reading `MUSCLEMOTION v1-1beta.ijm`. These are not criticisms 
 science — the tool is well designed and widely used — but they affect what "identical
 results" means, so the client should see them.
 
+Each item below states the consequence. For the original source behind it, and the
+mechanism worked through line by line, see [`LEGACY_MODE.md`](LEGACY_MODE.md).
+
 ### F1 — The automatic reference-frame selection does not do what it documents · *significant*
 
 The method is meant to find frames that are both quiet and stable (near the origin *and*
@@ -273,6 +276,19 @@ point regardless, so that step is drawn half its true length.
 Durations measured between two points are unaffected, since the shift cancels; absolute
 peak times after the reference are off by one frame. Small, and smaller still because the
 reference is usually near the start of the recording.
+
+### F11 — An explicitly set mask end frame excludes itself · *minor*
+
+The loop building the pixel mask stops one frame before the end frame it is given, so that
+frame does not contribute. With the default setting ("use the whole recording") this is
+invisible, because the count it compares against was taken before the reference frame was
+removed and the two off-by-ones cancel exactly. It only takes effect when a user sets an
+end frame deliberately — for instance to exclude a stimulation artefact — and then the last
+frame they asked for is silently left out.
+
+**Consequence:** negligible in practice. One frame among hundreds, contributing to a
+pixel-wise maximum that is subsequently thresholded; it changes the mask only if that frame
+happened to hold a pixel's largest excursion. Recorded for completeness.
 
 ---
 
