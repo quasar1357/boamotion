@@ -165,6 +165,11 @@ F11 and F14 are behaviours we deliberately copy, and copying them is still work.
 finding's `legacy` branch sits in exactly one helper — F6 for instance branches only in
 `_range_positions`, even though the damage surfaces in `_steepest_rise`.
 
+**To do at the final overhaul:** renumber and regroup all the findings once the picture is
+complete. The F1-F9 boundary in particular is drawn where it is only because those are the
+ones read line by line so far — F13 and F14 are implementation details too, and F14 will
+likely earn its own `LEGACY_MODE.md` section once the figures are written in step 12.
+
 ## Marking the `legacy` branches
 
 Every line that passes `legacy` down or branches on it carries a one-line note saying what
