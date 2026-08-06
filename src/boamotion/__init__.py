@@ -17,7 +17,7 @@ from boamotion.params import Params
 from boamotion.reference import detect_reference_frame
 from boamotion.synthetic import SyntheticRecording, synthetic_recording
 from boamotion.traces import build_motion_pixel_mask, measure_contraction, measure_speed
-from boamotion.transients import find_baselines, find_peaks
+from boamotion.transients import find_baselines, find_peaks, measure_transients
 
 __version__ = "0.0.1"
 
@@ -33,5 +33,6 @@ __all__ = [
     "load_frames",
     "build_motion_pixel_mask",
     "measure_speed",
+    "measure_transients",
     "synthetic_recording",
 ]

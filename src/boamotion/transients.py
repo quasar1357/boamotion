@@ -1,4 +1,4 @@
-"""Stage 4: finding the beats in a contraction trace, and the level each rises from.
+"""Stage 4: finding the beats in a contraction trace, and measuring each one.
 
 Positions here are indices into the trace, which holds one point fewer than the
 recording because the reference frame has been removed. See LEGACY_MODE.md for the
@@ -11,6 +11,7 @@ import logging
 import math
 
 import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +103,181 @@ def find_baselines(
         "Baselines for %d beat(s): %.4g to %.4g", len(baselines), baselines.min(), baselines.max()
     )
     return baselines
+
+
+def measure_transients(
+    trace,
+    peaks,
+    baselines,
+    *,
+    framerate: float = 100.0,
+    percentages: tuple[int, ...] = (10, 50, 90),
+) -> pd.DataFrame:
+    """Measure every beat: its amplitude, and how long it takes on each flank.
+
+    For each level in `percentages`, the value `baseline + level% of the amplitude` is
+    located on the way up and again on the way down, requiring three consecutive points
+    beyond it so that one noisy sample cannot trigger a crossing. The time between the
+    two is the transient duration at that level.
+
+    The **first** level does double duty: its two crossings also define time-to-peak,
+    relaxation time and contraction duration. That is why the levels must ascend.
+
+    Args:
+        trace: The contraction trace.
+        peaks: Peak positions, as returned by `find_peaks`.
+        baselines: One resting level per peak, as returned by `find_baselines`.
+        framerate: Frames per second, which turns positions into milliseconds.
+        percentages: Amplitude levels to measure at, ascending.
+
+    Returns:
+        One row per beat, indexed by beat number counting from 1.
+
+    There is no `legacy` argument here: this stage has nothing to correct. The original's
+    quirks that reach these numbers arrive through `baselines`, which `find_baselines`
+    computes in either mode.
+    """
+    trace = np.asarray(trace, dtype=np.float64)
+    peaks = np.asarray(peaks, dtype=int)
+    baselines = np.asarray(baselines, dtype=np.float64)
+    percentages = _checked_percentages(percentages)
+    if len(peaks) != len(baselines):
+        raise ValueError(
+            f"got {len(peaks)} peak(s) but {len(baselines)} baseline(s); they must match"
+        )
+    if len(peaks) == 0:
+        return pd.DataFrame(columns=_columns(percentages)).rename_axis("beat")
+
+    interval = 1000.0 / framerate
+    rows, gap = [], None
+
+    for beat, peak in enumerate(peaks):
+        # The original sizes its search range from the *next* peak and leaves the value
+        # standing for the last beat, which has none. For a lone beat its phantom peak
+        # at position zero gives -peak, and only the size is used, so this matches.
+        if beat + 1 < len(peaks):
+            gap = int(peaks[beat + 1] - peak)
+        elif gap is None:
+            gap = int(peak)
+
+        amplitude = float(trace[peak] - baselines[beat])
+        first, last = _search_borders(int(peak), gap, len(trace))
+        levels = [baselines[beat] + level / 100.0 * amplitude for level in percentages]
+        crossings = [
+            (
+                _crossing_before(trace, int(peak), level, first),
+                _crossing_after(trace, int(peak), level, last),
+            )
+            for level in levels
+        ]
+        _report_missing(crossings[0], beat)
+        rows.append(_beat_row(trace, peaks, baselines, beat, percentages, crossings, interval))
+
+    table = pd.DataFrame(rows, columns=_columns(percentages))
+    table.index = pd.RangeIndex(1, len(table) + 1, name="beat")
+    logger.info(
+        "Measured %d beat(s); contraction amplitude %.4g to %.4g",
+        len(table),
+        table["contraction_amplitude"].min(),
+        table["contraction_amplitude"].max(),
+    )
+    return table
+
+
+def _checked_percentages(percentages) -> tuple[int, ...]:
+    """The levels have to ascend, because the first one defines three other measures."""
+    levels = tuple(percentages)
+    if not levels:
+        raise ValueError("percentages must contain at least one level")
+    if any(not 1 <= level <= 99 for level in levels):
+        raise ValueError(f"percentages must all be in 1-99, got {levels}")
+    if list(levels) != sorted(set(levels)):
+        raise ValueError(f"percentages must be ascending and free of duplicates, got {levels}")
+    return levels
+
+
+def _columns(percentages: tuple[int, ...]) -> list[str]:
+    return [
+        "peak_position",
+        "peak_time_ms",
+        "baseline",
+        "peak_amplitude",
+        "contraction_amplitude",
+        "time_to_peak_ms",
+        "relaxation_time_ms",
+        "contraction_duration_ms",
+        "peak_to_peak_ms",
+        *(f"transient_{level}pct_ms" for level in percentages),
+    ]
+
+
+def _search_borders(peak: int, gap: int, n_points: int) -> tuple[int, int]:
+    """How far either side of a peak to look for a crossing.
+
+    Only the size of the gap matters, not its sign. The clamps leave room for the
+    three-point test at both ends, which is why a beat close to the end of a recording
+    can lose its falling crossing.
+    """
+    return max(peak - abs(gap), 2), min(peak + abs(gap), n_points - 3)
+
+
+def _crossing_before(trace: np.ndarray, peak: int, level: float, first: int) -> int | None:
+    """Walking back from the peak, the first point with three consecutive below `level`."""
+    for i in range(peak, first, -1):
+        if trace[i] < level and trace[i - 1] < level and trace[i - 2] < level:
+            return i
+    return None
+
+
+def _crossing_after(trace: np.ndarray, peak: int, level: float, last: int) -> int | None:
+    """The same walking forward from the peak."""
+    for i in range(peak, last):
+        if trace[i] < level and trace[i + 1] < level and trace[i + 2] < level:
+            return i
+    return None
+
+
+def _report_missing(crossing: tuple[int | None, int | None], beat: int) -> None:
+    for side, found in zip(("rising", "falling"), crossing, strict=True):
+        if found is None:
+            logger.warning(
+                "No crossing on the %s flank of beat %d; its durations are left empty",
+                side,
+                beat + 1,
+            )
+
+
+def _beat_row(
+    trace: np.ndarray,
+    peaks: np.ndarray,
+    baselines: np.ndarray,
+    beat: int,
+    percentages: tuple[int, ...],
+    crossings: list[tuple[int | None, int | None]],
+    interval: float,
+) -> list[float]:
+    peak = int(peaks[beat])
+    down, up = crossings[0]
+    duration = abs(up - down) * interval if down is not None and up is not None else np.nan
+
+    return [
+        peak,
+        peak * interval,
+        baselines[beat],
+        trace[peak],
+        trace[peak] - baselines[beat],
+        abs(peak - down) * interval if down is not None else np.nan,
+        abs(peak - up) * interval if up is not None else np.nan,
+        duration,
+        (peak - peaks[beat - 1]) * interval if beat > 0 else np.nan,
+        # The original leaves every level empty when the first one has no crossings.
+        *(
+            (high - low) * interval
+            if not np.isnan(duration) and low is not None and high is not None
+            else np.nan
+            for low, high in crossings
+        ),
+    ]
 
 
 def _even_window(peak_window: int) -> int:

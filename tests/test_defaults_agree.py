@@ -12,6 +12,7 @@ from boamotion import (
     find_peaks,
     measure_contraction,
     measure_speed,
+    measure_transients,
 )
 from boamotion.params import Params
 
@@ -22,6 +23,7 @@ FUNCTIONS = [
     measure_speed,
     find_peaks,
     find_baselines,
+    measure_transients,
 ]
 
 # Arguments that carry data rather than a setting, so Params does not define them.

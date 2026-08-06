@@ -18,11 +18,16 @@ them: reference frame, then mask, then transients. F8 and F9 we reproduce in **b
 modes, because they are definitions rather than mistakes and changing them would silently
 alter every result.
 
-Two conventions to keep in mind while reading the excerpts. Arrays in the ImageJ macro
+Three conventions to keep in mind while reading the excerpts. Arrays in the ImageJ macro
 language are **0-based**, but stack slices are **1-based**, and the macro mixes the two
 freely — which is where several of these come from. `Array.rankPositions(a)` returns the
 indices of `a` sorted by value ascending, so `rankPositions(a)[0]` is the position of the
 smallest element.
+
+And in the macro language `-` binds **tighter** than `+`, which is not what most languages
+do. It is what makes `100-percentages[m]+"-to-"+100-percentages[m]+" transient (ms)"`
+produce `90-to-90 transient (ms)` rather than a type error partway through, and equally
+what makes the all-`+` expression in F2 print `511` instead of `52`.
 
 | F | Quirk | Impact | Status |
 |---|---|---|---|
@@ -34,7 +39,7 @@ smallest element.
 | F6 | [A single detected peak loses its baseline](#f6--a-single-detected-peak-loses-its-baseline) | edge case | ported |
 | F7 | [A baseline shortage narrows every later beat](#f7--a-baseline-shortage-narrows-every-later-beat) | moderate | ported |
 | F8 | [The peak window is a frame narrower than it reads](#f8--the-peak-window-is-a-frame-narrower-than-it-reads) | minor | ported |
-| F9 | [The first percentage defines three other measures](#f9--the-first-percentage-defines-three-other-measures) | by design | step 10b |
+| F9 | [The first percentage defines three other measures](#f9--the-first-percentage-defines-three-other-measures) | by design | ported |
 
 ---
 
@@ -360,8 +365,8 @@ the definition of the parameter, and changing it would alter every peak list.
 
 ## F9 — The first percentage defines three other measures
 
-`transientAnalysis`, lines 1187-1245. **Not yet ported — step 10b.** Included here
-because it looks like a bug and is not.
+`transientAnalysis`, lines 1187-1245. Included here because it looks like a bug and
+is not.
 
 ```javascript
 for(m=0;m<percentageLevels.length;m++){
@@ -394,8 +399,20 @@ are not "fixed" during the port. Assigning `l=minBorder` is how the macro langua
 out of a loop. And the `three consecutive points below the level` test is a deliberate
 noise guard, not an off-by-one.
 
-**Planned handling.** To be reproduced in both modes, since it is the documented
-behaviour. We will require `percentages` in ascending order and document the coupling.
+**What boamotion does.** `measure_transients` reproduces the coupling in both modes and
+requires `percentages` to ascend, which `Params` already enforced.
+`test_the_first_percentage_defines_the_headline_measures` asserts that contraction duration
+always equals the transient at the first level, and that starting the list at 50% instead
+of 10% changes all three headline measures.
+
+Requiring ascending order also disarms a second problem in this loop. The
+`percentageDataDown` and `percentageDataUp` arrays are allocated once, before the peak
+loop, and never reset between beats, so a level with no crossing for this beat silently
+keeps the crossing found for the previous one. It is unreachable in practice: the
+durations are only computed when the *first* level found both its crossings, and the first
+level is the lowest, which is the hardest to reach — any level above it crosses nearer the
+peak. So if the first level is found, all of them are. We therefore do not reproduce the
+stale value, and there is nothing to correct.
 
 ---
 

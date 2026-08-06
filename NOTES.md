@@ -118,8 +118,8 @@ the notebook with it or the repo is inconsistent at that commit.
 | | 8 `build_motion_pixel_mask` | done |
 | | 9 `measure_contraction`, `measure_speed` | done |
 | | 10a `find_peaks` and `find_baselines` | done |
-| | 10b `analyse_transients` — levels, flank crossings, per-beat table | **next** |
-| **D** | 11 `Result` object and the seven output files | |
+| | 10b `measure_transients` — levels, flank crossings, per-beat table | done |
+| **D** | 11 `Result` object and the seven output files | **next** |
 | | 12 The three figures | |
 | | 13 `Boa`, the user-facing class, and logging | |
 | **E** | 14 Validation against FIJI output | needs data |
@@ -132,6 +132,10 @@ the notebook with it or the repo is inconsistent at that commit.
 | | 20 Performance work, if profiling justifies it | |
 
 Modules still to come: `result.py` (steps 11 and 12), `analysis.py` (13).
+
+Step 11 has to settle the original's output column names. The macro builds them with
+`100-percentages[m]+"-to-"+...`, which relies on `-` binding tighter than `+` in the
+macro language; worth confirming against real FIJI output when we have some.
 
 ## ImageJ numerical conventions
 
