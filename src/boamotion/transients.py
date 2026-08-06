@@ -44,6 +44,8 @@ def find_peaks(
     """
     trace = np.asarray(trace, dtype=np.float64)
     half = _even_window(peak_window) // 2
+    # legacy: the zero level is whatever the trace holds at the reference frame's own
+    # number, though that frame was removed from it, rather than the trace minimum
     zero = _zero_level(trace, reference_frame, legacy)
     threshold = (peak_threshold / 100.0) * (trace.max() - zero)
 
@@ -92,10 +94,12 @@ def find_baselines(
     if len(peaks) == 0:
         return np.zeros(0)
 
+    # legacy: a lone peak gains a phantom neighbour at zero, which zeroes its baseline
     positions = _range_positions(peaks, legacy)
     if high_freq_baseline:
         baselines = [_lowest_before(trace, positions, k) for k in range(len(positions))]
     else:
+        # legacy: carries a narrowed point count from beat to beat, and discards a lone point
         baselines = _flat_baselines(trace, positions, baseline_threshold, baseline_n_points, legacy)
 
     baselines = np.array(baselines[: len(peaks)], dtype=np.float64)
@@ -391,7 +395,7 @@ def _flat_baselines(
         threshold = (baseline_threshold / 100.0) * _steepest_rise(trace, positions, k)
         flat = _flat_points(trace, start, peak, threshold, ceiling)
 
-        if legacy:
+        if legacy:  # n_points carries over to the next beat, and a lone point is discarded
             baseline, n_points = _legacy_flat_average(flat, n_points, k)
         else:
             fallback = _lowest_before(trace, positions, k)

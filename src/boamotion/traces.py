@@ -41,6 +41,7 @@ def build_motion_pixel_mask(
     Returns:
         A boolean array the size of one frame, True where the pixel is kept.
     """
+    # legacy: the range stops one frame short, excluding mask_end_frame itself
     selected = _frames_to_use(
         len(frames), reference_frame, mask_start_frame, mask_end_frame, legacy
     )
@@ -91,7 +92,7 @@ def measure_contraction(
     """
     positions = _frames_without_reference(len(frames), reference_frame)
     reference = np.asarray(frames[reference_frame - 1], dtype=np.float32)
-    weight = _mask_weight(mask, reference.shape, legacy)
+    weight = _mask_weight(mask, reference.shape, legacy)  # legacy: scales the whole trace by 255
 
     values = np.empty(len(positions), dtype=np.float64)
     for index, position in enumerate(positions):
@@ -121,6 +122,14 @@ def measure_speed(
 
     The trace is `speed_window` points shorter than the contraction trace, since the
     last frames have no partner to be compared against.
+
+    Args:
+        frames: Anything indexable that yields 2-D frames, such as a FrameSequence.
+        reference_frame: The frame left out of the recording, 1-based.
+        speed_window: Frame gap each frame is compared across.
+        mask: Boolean mask from build_motion_pixel_mask, or None to use every pixel.
+        legacy: Reproduce the original macro, which weights kept pixels by 255
+            rather than 1. That scales the whole trace by a constant.
     """
     positions = _frames_without_reference(len(frames), reference_frame)
     if speed_window < 1:
@@ -132,7 +141,7 @@ def measure_speed(
         )
 
     shape = np.asarray(frames[positions[0]]).shape
-    weight = _mask_weight(mask, shape, legacy)
+    weight = _mask_weight(mask, shape, legacy)  # legacy: scales the whole trace by 255
 
     recent: deque[np.ndarray] = deque(maxlen=speed_window + 1)
     values = np.empty(len(positions) - speed_window, dtype=np.float64)
@@ -196,6 +205,7 @@ def _frames_to_use(
 
     without_reference = _frames_without_reference(n_frames, reference_frame)
     # The original's loop stops before its end frame instead of including it.
+    # legacy: end - 1, so the named end frame does not contribute
     last = len(without_reference) if end is None else (end - 1 if legacy else end)
     selected = without_reference[start - 1 : last]
 

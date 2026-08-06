@@ -56,7 +56,9 @@ def detect_reference_frame(
     n_low_values, n_unity_values = _fit_selection_sizes(n_pairs, n_low_values, n_unity_values)
 
     if legacy:
+        # The stability test is inert: the unfilled last entry stays 0 and always wins
         index = _select_legacy(window, n_low_values, n_unity_values)
+        # ref_search_start is never added back, so the frame is one too low by default
         frame = index + 1
     else:
         index = _select(window, n_low_values, n_unity_values)

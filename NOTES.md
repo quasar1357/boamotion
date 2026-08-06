@@ -137,6 +137,20 @@ Step 11 has to settle the original's output column names. The macro builds them 
 `100-percentages[m]+"-to-"+...`, which relies on `-` binding tighter than `+` in the
 macro language; worth confirming against real FIJI output when we have some.
 
+## Marking the `legacy` branches
+
+Every line that passes `legacy` down or branches on it carries a one-line note saying what
+the original does differently, so the effect is visible at the call site rather than only
+in the helper that implements it:
+
+```python
+# legacy: a lone peak gains a phantom neighbour at zero, which zeroes its baseline
+positions = _range_positions(peaks, legacy)
+```
+
+Prefix the note with `legacy:` where the line merely passes the flag on. Inside an
+`if legacy:` block the prefix is redundant, so drop it. Keep new branches to the same rule.
+
 ## ImageJ numerical conventions
 
 Two places where the obvious numpy default differs from ImageJ:
