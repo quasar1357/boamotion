@@ -210,11 +210,21 @@ The global peak-amplitude threshold takes its zero point from `yValues[reference
 — indexing the *contraction trace* with a *frame number*. The intent is "the baseline is
 near zero", but the value actually used is an arbitrary sample of the trace.
 
-### F4 — A spurious peak when exactly one peak is found · *minor, but visible*
+### F4 — A single detected peak loses its baseline · *edge case*
 
-If the detector finds a single peak, the code appends a literal `false` (i.e. 0) to the
-peak list to make later array arithmetic work. That produces an extra, meaningless result
-row for a peak at frame 0.
+If the detector finds exactly one peak, the code appends a literal `false` (i.e. 0) to the
+peak list to make later array arithmetic work. The result table is written per *detected*
+peak, so no spurious row appears — but several quantities are derived from the distance
+between neighbouring peaks, and the appended zero makes the real peak look as though it has
+a neighbour at position 0. That distance comes out negative, a loop that should locate the
+beat's steepest rise never runs, and in the flat-baseline mode the resulting threshold of
+zero admits no baseline points at all.
+
+**Consequence:** with `high_freq_baseline = False`, the single beat's baseline is reported
+as 0 and its contraction amplitude therefore equals the raw peak height rather than the
+height above rest. The flank crossings are also searched over a wider range than intended.
+With `high_freq_baseline = True` the baseline is unaffected. Relevant to short or slowly
+beating recordings, and to any recording where the peak threshold admits only one beat.
 
 ### F5 — Why the earlier Python attempt gave different results
 
@@ -289,6 +299,37 @@ frame they asked for is silently left out.
 **Consequence:** negligible in practice. One frame among hundreds, contributing to a
 pixel-wise maximum that is subsequently thresholded; it changes the mask only if that frame
 happened to hold a pixel's largest excursion. Recorded for completeness.
+
+### F12 — The peak detection window is one frame narrower than it reads · *minor*
+
+A candidate is compared against its neighbours out to `peak_window/2 - 1` on each side, so
+the default of 20 examines a 19-point neighbourhood. A peak exactly 10 points away from a
+higher one is admitted. This is a definition detail rather than a mistake — "a window of 20
+frames" centred on a point is inherently ambiguous — but it is worth knowing when choosing
+the parameter, and we reproduce it exactly in both modes because changing it would alter
+every peak list.
+
+A firmer consequence of the same loop: candidates within `peak_window/2` of the start of the
+trace, or `peak_window/2 + 1` of its end, are never examined at all. **A beat at the very
+start of a recording cannot be detected.** With the default that is the first ten points.
+
+### F13 — One beat with too few baseline points narrows all the later ones · *moderate*
+
+This applies only to the flat-baseline mode (`high_freq_baseline = False`). When a beat does
+not offer enough flat points to average, the macro reduces the number of points to average —
+but it assigns to the parameter itself rather than to a per-beat copy. Every subsequent beat
+in that recording then uses the reduced number, and the value only ever ratchets downward.
+One noisy beat early on can leave the rest of the recording with baselines averaged over one
+or two points.
+
+A second, related detail: a beat offering exactly one qualifying point is treated as
+offering none, and its baseline is reported as 0.
+
+**Consequence:** baselines, and therefore contraction amplitudes, depend on the order the
+beats are processed in, and a single bad beat degrades the beats after it but not before it.
+The printed warning names the beat that triggered the reduction but not the ones it affects.
+`high_freq_baseline = True`, which we believe is the client's setting, is unaffected — worth
+confirming (see Q3).
 
 ---
 

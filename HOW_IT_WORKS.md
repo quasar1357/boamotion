@@ -196,10 +196,13 @@ admitted or dropped.
 **3. A one-frame offset** in the reference-frame search: the motion trace is computed
 relative to `ref_search_start` but then sliced with absolute indices.
 
-**4. A phantom peak when only one is detected.** If exactly one peak is found, a literal
+**4. A single detected peak loses its baseline.** If exactly one peak is found, a literal
 `false` (evaluating to 0) is appended to the peak list so that later array arithmetic
-works. This produces a second peak at frame 0 with meaningless measurements attached. It
-affects short or slowly beating recordings.
+works. No extra result row appears, but the real beat now looks as though it has a
+neighbour at position 0, and the distances derived from that neighbour come out negative.
+In the flat-baseline mode this leaves the baseline at zero, so the reported contraction
+amplitude is the raw peak height rather than the height above rest. It affects short or
+slowly beating recordings.
 
 **5. The first percentage silently defines three other measures**, as described above.
 This only matters when the lowest level is deselected, at which point time-to-peak and
@@ -211,8 +214,11 @@ be reproduced to match the original's numbers.
 
 In practice items 1 and 2 can genuinely change results, item 3 shifts them slightly, item 4
 affects edge cases only, item 5 depends on settings, and item 6 is a constant factor.
-A seventh, smaller item: when a mask end frame is set explicitly, that frame itself does not
-contribute to the mask.
+Three smaller items complete the list: when a mask end frame is set explicitly, that frame
+itself does not contribute to the mask; the peak window examines one frame less than it
+names, and never examines the very start or end of the trace; and in the flat-baseline mode
+a beat with too few flat points permanently reduces the number averaged for every later
+beat.
 
 Each of these is shown in the original's own source, with the mechanism worked through, in
 [`LEGACY_MODE.md`](LEGACY_MODE.md).

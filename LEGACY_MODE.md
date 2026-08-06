@@ -22,8 +22,10 @@ smallest element.
 | 3 | [The mask loses its last frame](#3--the-mask-loses-its-last-frame) | minor | ported |
 | 4 | [The mask holds 255, not 1](#4--the-mask-holds-255-not-1) | constant factor | ported |
 | 5 | [The peak threshold indexes the trace with a frame number](#5--the-peak-threshold-indexes-the-trace-with-a-frame-number) | moderate | step 10 |
-| 6 | [A phantom peak when only one is found](#6--a-phantom-peak-when-only-one-is-found) | edge case | step 10 |
-| 7 | [The first percentage defines three other measures](#7--the-first-percentage-defines-three-other-measures) | by design | step 10 |
+| 6 | [A single detected peak loses its baseline](#6--a-single-detected-peak-loses-its-baseline) | edge case | step 10 |
+| 7 | [The peak window is a frame narrower than it reads](#7--the-peak-window-is-a-frame-narrower-than-it-reads) | minor | step 10 |
+| 8 | [A baseline shortage narrows every later beat](#8--a-baseline-shortage-narrows-every-later-beat) | moderate | step 10 |
+| 9 | [The first percentage defines three other measures](#9--the-first-percentage-defines-three-other-measures) | by design | step 10 |
 
 ---
 
@@ -214,7 +216,7 @@ so the index does not even refer to the frame it names.
 **Planned handling.** `legacy=True` reproduces the indexing verbatim; `legacy=False` uses
 the trace minimum as the zero point.
 
-## 6 — A phantom peak when only one is found
+## 6 — A single detected peak loses its baseline
 
 `transientAnalysis`, lines 1047-1051. **Not yet ported — step 10.** See F4.
 
@@ -226,20 +228,117 @@ if(maxCount<2){
 }
 ```
 
-**What goes wrong.** `maxList` is built as a bare number when the first peak is found and
-only becomes an array on the second (lines 1037-1044), so a single peak leaves a scalar
-where the rest of the function expects an array. The fix appends `false`, which the macro
-coerces to `0`.
+**Why it is there.** `maxList` is assigned a bare number for the first peak and only becomes
+an array on the second (lines 1037-1044), so a single peak leaves a scalar where the rest of
+the function expects an array. Appending `false`, which the macro coerces to `0`, makes it
+an array again.
 
-Downstream, `maxList.length` is now 2 and the loops run twice, producing a second result
-row for a "peak" at trace position 0, with whatever measurements fall out of it. It affects
-short recordings and slowly beating ones — exactly the recordings where a spurious extra
-row is most likely to be taken seriously.
+**What goes wrong.** `maxCount` stays 1 while `maxList.length` becomes 2, and the function
+uses the two interchangeably. Everything that writes a result row is bounded by `maxCount`
+(lines 1172 and 1262), so **no spurious row is produced** — but everything that derives a
+range from the *next* peak uses `maxList`, and the next peak is now at position 0, so those
+ranges come out negative:
 
-**Planned handling.** `legacy=True` emits the phantom row so the result table matches
-FIJI's row for row; `legacy=False` returns the single peak alone.
+```javascript
+rangeSpeedMax=round((maxList[j+1]-maxList[j])/4);          // negative
+if(maxList[j]-(rangeSpeedMax)>0 && maxList[j]+rangeSpeedMax<yValues.length){
+    findMax=0;
+    for(b=maxList[j]-rangeSpeedMax;b<maxList[j]+rangeSpeedMax-1;b++){   // start > end
+        ...
+    speedMaxValueList[j]=findMax;                          // assignment is inside the loop
+    }
+}
+```
 
-## 7 — The first percentage defines three other measures
+The guard passes, but the loop's start already exceeds its end, so it never iterates — and
+because the assignment sits *inside* it, `speedMaxValueList[0]` is never written and keeps
+its zero-fill. That value is the beat's steepest rise, and the flat-baseline mode scales its
+threshold by it:
+
+```javascript
+baselineThresholdValue=(baselineThreshold/100)*speedMaxValueList[countPeakRegion];  // 0
+if((abs(yValues[j+1]-yValues[j])<baselineThresholdValue) && ...)                    // never true
+```
+
+No point can be strictly below zero, so no baseline points are collected and the baseline is
+reported as `0`. The contraction amplitude for that beat is then its raw height rather than
+its height above rest.
+
+`high_freq_baseline = True` takes a minimum instead and is unaffected. The flank search is
+also widened, since `peakToPeakDistance` becomes negative and only its absolute value is
+used.
+
+**Planned handling.** `legacy=True` reproduces the zero baseline; `legacy=False` treats a
+lone peak as having no following neighbour and measures its baseline from the recording
+start, as it would for any other first peak.
+
+## 7 — The peak window is a frame narrower than it reads
+
+`transientAnalysis`, lines 1021-1027. **Not yet ported — step 10.** See F12.
+
+```javascript
+for(u=PeakDetectionWindow/2;u<yValues.length-1-PeakDetectionWindow/2;u++){
+    if((yValues[u]-perc0)>peakThresholdValue){
+        for(r=1;r<PeakDetectionWindow/2;r++){
+            if(yValues[u-r]>yValues[u] || yValues[u+r]>yValues[u]){
+                noMax=true;
+```
+
+**What happens.** The inner bound is strict, so with the default window of 20 a candidate is
+compared against its neighbours at `±1 … ±9` — a 19-point neighbourhood, not 20 or 21. A
+peak exactly 10 points from a higher one is therefore admitted.
+
+This is a definition detail rather than a mistake; "a window of 20 frames" centred on a point
+is inherently ambiguous. It is recorded because it must be matched exactly to reproduce the
+original's peak list, and because the obvious reading of the parameter is off by one.
+
+The outer bound has a firmer consequence: candidates in the first `peak_window/2` points, or
+the last `peak_window/2 + 1`, are never examined. A beat at the very start of a recording is
+invisible to the detector.
+
+**Planned handling.** Reproduced in both modes — this is the definition of the parameter,
+and changing it would silently alter every peak list.
+
+## 8 — A baseline shortage narrows every later beat
+
+`transientAnalysis`, lines 1139-1167. **Not yet ported — step 10.** See F13.
+
+```javascript
+if(regionBaselineValues.length>baselineNumberOfPoints){
+    startF=regionBaselineValues.length-baselineNumberOfPoints;
+}
+else{
+    startF=0;
+    baselineNumberOfPoints=regionBaselineValues.length;    // (a) global, and permanent
+    print("WARNING: Not enough baseline values at peak "+countPeakRegion+" ...");
+}
+if(regionBaselineValues.length>1){
+    ...                                                    // sum the last startF..end
+}
+else{
+    sumBaselineValues=0;                                   // (b) a single point is discarded
+}
+minValueList[countPeakRegion]=sumBaselineValues/baselineNumberOfPoints;
+```
+
+**What goes wrong, twice.** At (a) `baselineNumberOfPoints` is the global parameter itself,
+not a local copy. One beat with too few flat points permanently lowers it for every
+*subsequent* beat in the recording, and it only ever ratchets downward. A single noisy beat
+early in a recording can therefore reduce the whole recording's baselines to an average of
+one or two points. The warning printed names the beat that triggered it but not the beats it
+goes on to affect.
+
+At (b) the array is initialised as `newArray(1)`, so "one qualifying point" and "no
+qualifying points at all" are indistinguishable — both have length 1. The branch discards
+both, yielding a baseline of `0 / baselineNumberOfPoints = 0`. So a beat with exactly one
+flat point gets a zero baseline rather than that point's value.
+
+**Planned handling.** `legacy=True` reproduces the ratchet and the discard.
+`legacy=False` keeps the parameter local to each beat and uses a single qualifying point
+when that is all there is, falling back to the minimum over the search range when there are
+none.
+
+## 9 — The first percentage defines three other measures
 
 `transientAnalysis`, lines 1187-1245. **Not yet ported — step 10.** See F8. Included here
 because it looks like a bug and is not.
