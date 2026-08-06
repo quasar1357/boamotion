@@ -25,8 +25,8 @@ from `pyproject.toml`. A virtual environment works equally well: `pip install -e
 
 - [`HOW_IT_WORKS.md`](HOW_IT_WORKS.md) — what the analysis computes and what each
   parameter changes.
-- [`LEGACY_MODE.md`](LEGACY_MODE.md) — the original macro's quirks in its own source, and
-  what `legacy=True` reproduces.
+- [`LEGACY_MODE.md`](LEGACY_MODE.md) — the original macro's quirks worked through against
+  its own source, and what each `legacy` branch does.
 - [`notebooks/`](notebooks) — worked examples.
 - [`NOTES.md`](NOTES.md) — working notes on the original macro and this port.
 - [`DECISIONS.md`](DECISIONS.md) — design decisions, open questions and findings to

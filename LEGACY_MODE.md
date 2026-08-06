@@ -1,13 +1,22 @@
-# What `legacy=True` reproduces, in the original's own code
+# The original's quirks, in its own code
 
-`HOW_IT_WORKS.md` describes the original's quirks in plain language and `DECISIONS.md`
-records what they mean for results. This file is the working reference behind both: for
-each item, the actual FIJI macro source, why it behaves as it does, and what `boamotion`
-does in either mode.
+The last section of [`HOW_IT_WORKS.md`](HOW_IT_WORKS.md) describes these quirks in plain
+language, and section 3 of [`DECISIONS.md`](DECISIONS.md) records what each means for
+results. This file is the working reference behind both: for each one, the actual FIJI
+macro source, why it behaves as it does, and what `boamotion` does in either mode.
 
 It is aimed at whoever maintains the port — including us, months from now, trying to
 remember why a function has two branches. Line numbers refer to
 `MUSCLEMOTION v1-1beta.ijm`.
+
+**The F numbers are shared across all three files**, so any finding can be followed from
+one to the next. The nine below are F1 to F9 of the fourteen in `DECISIONS.md` — the ones
+that are quirks of the original's implementation.
+
+F1 to F7 are corrected by `legacy=False`, and run roughly in the order the analysis meets
+them: reference frame, then mask, then transients. F8 and F9 we reproduce in **both**
+modes, because they are definitions rather than mistakes and changing them would silently
+alter every result.
 
 Two conventions to keep in mind while reading the excerpts. Arrays in the ImageJ macro
 language are **0-based**, but stack slices are **1-based**, and the macro mixes the two
@@ -15,23 +24,23 @@ freely — which is where several of these come from. `Array.rankPositions(a)` r
 indices of `a` sorted by value ascending, so `rankPositions(a)[0]` is the position of the
 smallest element.
 
-| | Quirk | Impact | Status |
+| F | Quirk | Impact | Status |
 |---|---|---|---|
-| 1 | [The unity-line filter never runs](#1--the-unity-line-filter-never-runs) | significant | ported |
-| 2 | [Search start is not added back](#2--the-search-start-is-not-added-back) | minor | ported |
-| 3 | [The mask loses its last frame](#3--the-mask-loses-its-last-frame) | minor | ported |
-| 4 | [The mask holds 255, not 1](#4--the-mask-holds-255-not-1) | constant factor | ported |
-| 5 | [The peak threshold indexes the trace with a frame number](#5--the-peak-threshold-indexes-the-trace-with-a-frame-number) | moderate | step 10 |
-| 6 | [A single detected peak loses its baseline](#6--a-single-detected-peak-loses-its-baseline) | edge case | step 10 |
-| 7 | [The peak window is a frame narrower than it reads](#7--the-peak-window-is-a-frame-narrower-than-it-reads) | minor | step 10 |
-| 8 | [A baseline shortage narrows every later beat](#8--a-baseline-shortage-narrows-every-later-beat) | moderate | step 10 |
-| 9 | [The first percentage defines three other measures](#9--the-first-percentage-defines-three-other-measures) | by design | step 10 |
+| F1 | [The unity-line filter never runs](#f1--the-unity-line-filter-never-runs) | significant | ported |
+| F2 | [The search start is not added back](#f2--the-search-start-is-not-added-back) | minor | ported |
+| F3 | [The mask loses its last frame](#f3--the-mask-loses-its-last-frame) | minor | ported |
+| F4 | [The mask holds 255, not 1](#f4--the-mask-holds-255-not-1) | constant factor | ported |
+| F5 | [The peak threshold indexes the trace with a frame number](#f5--the-peak-threshold-indexes-the-trace-with-a-frame-number) | moderate | ported |
+| F6 | [A single detected peak loses its baseline](#f6--a-single-detected-peak-loses-its-baseline) | edge case | ported |
+| F7 | [A baseline shortage narrows every later beat](#f7--a-baseline-shortage-narrows-every-later-beat) | moderate | ported |
+| F8 | [The peak window is a frame narrower than it reads](#f8--the-peak-window-is-a-frame-narrower-than-it-reads) | minor | ported |
+| F9 | [The first percentage defines three other measures](#f9--the-first-percentage-defines-three-other-measures) | by design | step 10b |
 
 ---
 
-## 1 — The unity-line filter never runs
+## F1 — The unity-line filter never runs
 
-Reference-frame detection, lines 899-921. This is the one that actually matters. See F1.
+Reference-frame detection, lines 899-921. This is the one that actually matters.
 
 ```javascript
 indicesVal=Array.rankPositions(radianPoints);   // candidates, quietest first
@@ -94,9 +103,9 @@ On a recording built so that the right answer is unambiguous, the corrected meth
 the quiet, steady point while the original picks one with about **twelve times** as much
 motion.
 
-## 2 — The search start is not added back
+## F2 — The search start is not added back
 
-Same function, lines 859-891 and 923-929. See F2.
+Same function, lines 859-891 and 923-929.
 
 ```javascript
 speedY=newArray(autoDetectStop-autoDetectStart+1);
@@ -129,9 +138,9 @@ version returns the same physical frame from three different search starts;
 `test_legacy_result_moves_when_the_search_starts_elsewhere` asserts the original's does
 not.
 
-## 3 — The mask loses its last frame
+## F3 — The mask loses its last frame
 
-`pixelsOfInterest`, lines 649-651. Not previously written down anywhere; see F11.
+`pixelsOfInterest`, lines 649-651.
 
 ```javascript
 if(MPendRange==-1){MPendRange=slices;}
@@ -155,10 +164,10 @@ above. `test_legacy_stops_one_frame_early` pins it.
 Small in effect: one frame out of hundreds, contributing to a pixel-wise maximum that is
 then thresholded. It matters only if that particular frame held the largest excursion.
 
-## 4 — The mask holds 255, not 1
+## F4 — The mask holds 255, not 1
 
-`pixelsOfInterest` line 674, applied in `getContractionData` line 697. See F9 for the
-related point about the average.
+`pixelsOfInterest` line 674, applied in `getContractionData` line 697. See also F13, a
+separate point about the average that follows.
 
 ```javascript
 setThreshold(lucaVar, max);
@@ -182,7 +191,7 @@ unmasked one and expecting the amplitudes to be commensurable.
 
 Note also that `getStatistics` runs on the multiplied image, whose mean is taken over the
 **whole frame** with excluded pixels counted as zero, not over the kept pixels. That is the
-separate point recorded as F9, and we reproduce it in both modes because it is a design
+separate point recorded as F13, and we reproduce it in both modes because it is a design
 choice rather than a mistake.
 
 **What boamotion does.** `_mask_weight` multiplies the boolean mask by `255.0` when
@@ -190,9 +199,9 @@ choice rather than a mistake.
 and `test_legacy_changes_nothing_without_a_mask` asserts the flag is inert when there is no
 mask to scale.
 
-## 5 — The peak threshold indexes the trace with a frame number
+## F5 — The peak threshold indexes the trace with a frame number
 
-`transientAnalysis`, lines 1009-1011. **Not yet ported — this is step 10.** See F3.
+`transientAnalysis`, lines 1009-1011.
 
 ```javascript
 perc100=yValues[maxMin[yValues.length-1]];
@@ -213,12 +222,14 @@ amplitude and peaks are wrongly admitted or dropped.
 The compounding detail: the reference frame has been removed from the trace by this point,
 so the index does not even refer to the frame it names.
 
-**Planned handling.** `legacy=True` reproduces the indexing verbatim; `legacy=False` uses
-the trace minimum as the zero point.
+**What boamotion does.** `_zero_level` reproduces the indexing when `legacy=True` and
+takes the trace minimum otherwise. `test_the_legacy_zero_level_can_drop_a_genuine_beat`
+builds a train with one smaller beat and shows the original losing it while the
+corrected version keeps it.
 
-## 6 — A single detected peak loses its baseline
+## F6 — A single detected peak loses its baseline
 
-`transientAnalysis`, lines 1047-1051. **Not yet ported — step 10.** See F4.
+`transientAnalysis`, lines 1047-1051.
 
 ```javascript
 //fix if maxList is 1 value;
@@ -268,40 +279,15 @@ its height above rest.
 also widened, since `peakToPeakDistance` becomes negative and only its absolute value is
 used.
 
-**Planned handling.** `legacy=True` reproduces the zero baseline; `legacy=False` treats a
-lone peak as having no following neighbour and measures its baseline from the recording
-start, as it would for any other first peak.
+**What boamotion does.** `_range_positions` appends the phantom zero when `legacy=True`
+and exactly one peak was found, so `_steepest_rise` reverses just as the original does.
+`test_a_lone_peak_gets_a_zero_baseline_in_legacy_mode` asserts the resulting baseline is
+`0.0` and that the corrected mode returns a genuine resting value;
+`test_a_lone_peak_is_unaffected_in_the_high_frequency_mode` pins the other half.
 
-## 7 — The peak window is a frame narrower than it reads
+## F7 — A baseline shortage narrows every later beat
 
-`transientAnalysis`, lines 1021-1027. **Not yet ported — step 10.** See F12.
-
-```javascript
-for(u=PeakDetectionWindow/2;u<yValues.length-1-PeakDetectionWindow/2;u++){
-    if((yValues[u]-perc0)>peakThresholdValue){
-        for(r=1;r<PeakDetectionWindow/2;r++){
-            if(yValues[u-r]>yValues[u] || yValues[u+r]>yValues[u]){
-                noMax=true;
-```
-
-**What happens.** The inner bound is strict, so with the default window of 20 a candidate is
-compared against its neighbours at `±1 … ±9` — a 19-point neighbourhood, not 20 or 21. A
-peak exactly 10 points from a higher one is therefore admitted.
-
-This is a definition detail rather than a mistake; "a window of 20 frames" centred on a point
-is inherently ambiguous. It is recorded because it must be matched exactly to reproduce the
-original's peak list, and because the obvious reading of the parameter is off by one.
-
-The outer bound has a firmer consequence: candidates in the first `peak_window/2` points, or
-the last `peak_window/2 + 1`, are never examined. A beat at the very start of a recording is
-invisible to the detector.
-
-**Planned handling.** Reproduced in both modes — this is the definition of the parameter,
-and changing it would silently alter every peak list.
-
-## 8 — A baseline shortage narrows every later beat
-
-`transientAnalysis`, lines 1139-1167. **Not yet ported — step 10.** See F13.
+`transientAnalysis`, lines 1139-1167.
 
 ```javascript
 if(regionBaselineValues.length>baselineNumberOfPoints){
@@ -333,14 +319,48 @@ qualifying points at all" are indistinguishable — both have length 1. The bran
 both, yielding a baseline of `0 / baselineNumberOfPoints = 0`. So a beat with exactly one
 flat point gets a zero baseline rather than that point's value.
 
-**Planned handling.** `legacy=True` reproduces the ratchet and the discard.
-`legacy=False` keeps the parameter local to each beat and uses a single qualifying point
-when that is all there is, falling back to the minimum over the search range when there are
-none.
+**What boamotion does.** `_legacy_flat_average` carries the narrowed count from beat to
+beat and discards a lone point; the corrected path keeps `baseline_n_points` per beat,
+uses a single qualifying point when that is all there is, and falls back to the lowest
+point in the search range when there are none.
+`test_a_baseline_shortage_narrows_every_later_beat` measures the same second beat against
+two traces differing only in the first, and gets 10.8 against 10.6.
 
-## 9 — The first percentage defines three other measures
+## F8 — The peak window is a frame narrower than it reads
 
-`transientAnalysis`, lines 1187-1245. **Not yet ported — step 10.** See F8. Included here
+`transientAnalysis`, lines 1021-1027.
+
+```javascript
+for(u=PeakDetectionWindow/2;u<yValues.length-1-PeakDetectionWindow/2;u++){
+    if((yValues[u]-perc0)>peakThresholdValue){
+        for(r=1;r<PeakDetectionWindow/2;r++){
+            if(yValues[u-r]>yValues[u] || yValues[u+r]>yValues[u]){
+                noMax=true;
+```
+
+**What happens.** The inner bound is strict, so with the default window of 20 a candidate is
+compared against its neighbours at `±1 … ±9` — a 19-point neighbourhood, not 20 or 21. A
+peak exactly 10 points from a higher one is therefore admitted.
+
+This is a definition detail rather than a mistake; "a window of 20 frames" centred on a point
+is inherently ambiguous. It is recorded because it must be matched exactly to reproduce the
+original's peak list, and because the obvious reading of the parameter is off by one.
+
+The outer bound has a firmer consequence: candidates in the first `peak_window/2` points, or
+the last `peak_window/2 + 1`, are never examined. A beat at the very start of a recording is
+invisible to the detector.
+
+**What boamotion does.** `_dominates_neighbours` compares the slice
+`[position - half + 1, position + half)`, matching the original in both modes: this is
+the definition of the parameter, and changing it would alter every peak list.
+`test_the_neighbourhood_reaches_one_point_less_far_than_the_window` shows a higher point
+10 away failing to displace a candidate where one 9 away succeeds, and
+`test_a_beat_near_the_end_of_the_trace_is_never_examined` shows the textbook window of
+18 losing the fourth beat of our synthetic recording.
+
+## F9 — The first percentage defines three other measures
+
+`transientAnalysis`, lines 1187-1245. **Not yet ported — step 10b.** Included here
 because it looks like a bug and is not.
 
 ```javascript
@@ -374,8 +394,8 @@ are not "fixed" during the port. Assigning `l=minBorder` is how the macro langua
 out of a loop. And the `three consecutive points below the level` test is a deliberate
 noise guard, not an off-by-one.
 
-**Planned handling.** Reproduced in both modes, since it is the documented behaviour. We
-require `percentages` in ascending order and document the coupling.
+**Planned handling.** To be reproduced in both modes, since it is the documented
+behaviour. We will require `percentages` in ascending order and document the coupling.
 
 ---
 

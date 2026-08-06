@@ -43,7 +43,7 @@ numbers changed silently. Cost is a modest amount of extra code and testing.
 ### D4 — Reimplement the original's algorithms rather than substituting library equivalents · *taken*
 
 Where the macro has a bespoke algorithm (peak detection, baseline finding, flank
-crossings), we port it literally instead of calling a standard library function. See F5
+crossings), we port it literally instead of calling a standard library function. See F10
 for why this matters.
 
 ### D5 — No video display; no viewer dependency · *proposed*
@@ -170,10 +170,41 @@ Observations from reading `MUSCLEMOTION v1-1beta.ijm`. These are not criticisms 
 science — the tool is well designed and widely used — but they affect what "identical
 results" means, so the client should see them.
 
-Each item below states the consequence. For the original source behind it, and the
-mechanism worked through line by line, see [`LEGACY_MODE.md`](LEGACY_MODE.md).
+**The F numbers below are the labels used throughout.** The same number identifies the same
+finding in [`HOW_IT_WORKS.md`](HOW_IT_WORKS.md) and in [`LEGACY_MODE.md`](LEGACY_MODE.md),
+so a finding can be followed from its consequence here, to its plain-language description
+there, to the original source and the mechanism worked through line by line.
 
-### F1 — The automatic reference-frame selection does not do what it documents · *significant*
+They divide into the ones we treat as mistakes and correct, and the ones we accept and
+reproduce as they are. Separately, **F1 to F9 are quirks of the original's implementation**
+and each has a section of its own number in `LEGACY_MODE.md`; F10 to F14 are observations of
+another kind and have none.
+
+| F | Finding | Impact |
+|---|---|---|
+| | **Corrected by `legacy=False`** | |
+| F1 | The reference-frame selection skips its own stability test | significant |
+| F2 | The search start is not added back to the frame number | minor |
+| F3 | An explicitly set mask end frame excludes itself | minor |
+| F4 | The mask holds 255 rather than 1 | constant factor |
+| F5 | The peak threshold uses an arbitrary sample of the trace | moderate |
+| F6 | A single detected peak loses its baseline | edge case |
+| F7 | A baseline shortage narrows every later beat | moderate |
+| | **Reproduced as they are** | |
+| F8 | The peak window is one frame narrower than it reads | minor |
+| F9 | The first percentage silently defines three other measures | by design |
+| F10 | Why the earlier Python attempt gave different results | — |
+| F11 | Percentage columns are named by `100 - percentage` | convention |
+| F12 | Settings live in ImageJ's global preferences | workflow |
+| F13 | Masked amplitudes depend on how much of the frame the mask keeps | by design |
+| F14 | The time axis closes the gap left by the reference frame | minor |
+
+### Corrected by `legacy=False`
+
+Behaviour we treat as a mistake. `legacy=True` reproduces each one exactly, so results can
+be matched against existing FIJI output, and `legacy=False` corrects it.
+
+#### F1 — The automatic reference-frame selection does not do what it documents · *significant*
 
 The method is meant to find frames that are both quiet and stable (near the origin *and*
 near the unity line in the phase-plane). In the code the `unitySelection` array is
@@ -193,7 +224,7 @@ resting frame, but on different ones. Tests pin the mechanism: the original's an
 always the `lowValueN`-th quietest candidate whatever the stability scores are, and
 `unitySelectionN` provably changes nothing.
 
-### F2 — One-frame offset in the same routine · *minor*
+#### F2 — One-frame offset in the same routine · *minor*
 
 The motion trace is computed relative to `autoDetectStart` but then sliced with absolute
 indices, so the chosen point is mapped back to a frame number without accounting for where
@@ -204,13 +235,33 @@ where the search window starts, while the original's answer moves with `autoDete
 With the default of 1 the reported frame is one too low. A larger value shifts it further,
 which also means `autoDetectStart` was effectively unusable in the original.
 
-### F3 — The peak threshold uses an arbitrary trace sample · *moderate*
+#### F3 — An explicitly set mask end frame excludes itself · *minor*
+
+The loop building the pixel mask stops one frame before the end frame it is given, so that
+frame does not contribute. With the default setting ("use the whole recording") this is
+invisible, because the count it compares against was taken before the reference frame was
+removed and the two off-by-ones cancel exactly. It only takes effect when a user sets an
+end frame deliberately — for instance to exclude a stimulation artefact — and then the last
+frame they asked for is silently left out.
+
+**Consequence:** negligible in practice. One frame among hundreds, contributing to a
+pixel-wise maximum that is subsequently thresholded; it changes the mask only if that frame
+happened to hold a pixel's largest excursion. Recorded for completeness.
+
+#### F4 — The mask holds 255 rather than 1 · *constant factor*
+
+The mask is binarised to 0 and 255, and the difference image is multiplied by it directly,
+so every masked trace is scaled by 255. Harmless in itself, since the units are arbitrary,
+but it has to be reproduced exactly to match the original's numbers, and it means masked and
+unmasked amplitudes from the original are not directly comparable.
+
+#### F5 — The peak threshold uses an arbitrary trace sample · *moderate*
 
 The global peak-amplitude threshold takes its zero point from `yValues[referenceFrameSlice]`
 — indexing the *contraction trace* with a *frame number*. The intent is "the baseline is
 near zero", but the value actually used is an arbitrary sample of the trace.
 
-### F4 — A single detected peak loses its baseline · *edge case*
+#### F6 — A single detected peak loses its baseline · *edge case*
 
 If the detector finds exactly one peak, the code appends a literal `false` (i.e. 0) to the
 peak list to make later array arithmetic work. The result table is written per *detected*
@@ -226,94 +277,7 @@ height above rest. The flank crossings are also searched over a wider range than
 With `high_freq_baseline = True` the baseline is unaffected. Relevant to short or slowly
 beating recordings, and to any recording where the peak threshold admits only one beat.
 
-### F5 — Why the earlier Python attempt gave different results
-
-The client's colleague attributed the discrepancy to OpenCV versus FIJI arithmetic. That
-is almost certainly not the cause — `cv2.absdiff` on 32-bit floats is identical to numpy's
-subtraction. The real differences are that three algorithms were replaced rather than
-ported: reference-frame selection uses "quietest consecutive frame difference" instead of
-the phase-plane method; peak detection uses `scipy.signal.find_peaks` with a prominence
-criterion instead of the macro's sliding-window-and-threshold rule; and flank crossings
-use a different rule than the macro's "three consecutive points beyond the level". The
-reference frame is also never removed from the stack, which the macro does. This is the
-direct justification for D4.
-
-### F6 — Column naming convention
-
-Percentage output columns are named by `100 - percentage`, so selecting 10% produces a
-column called "90-to-90 transient (ms)". Confusing at first sight, but it matches the CD90
-convention used in the field. We will keep it and document it.
-
-### F7 — Settings are stored in ImageJ's global preferences
-
-The macro remembers the last-used settings across sessions in ImageJ's preference store.
-Convenient, but it means an analysis cannot be reproduced from its outputs alone, and
-settings leak between unrelated projects. See D6.
-
----
-
-### F8 — The first selected percentage silently defines three other measures
-
-The chosen percentage levels look like an independent list of extra outputs, but the
-*first* one does more: its crossing points on the two flanks are what "time-to-peak",
-"relaxation time" and "contraction duration" are measured from. With the usual selection
-starting at 10%, contraction duration is therefore measured 10% above baseline — which the
-column name does say — but deselecting 10% would silently change the definition of three
-headline measures. We keep the behaviour, require the levels to be given in ascending
-order, and document it.
-
-### F9 — Masked amplitudes depend on how much of the frame the mask keeps
-
-The mask is applied by multiplying the difference image, but the average that follows is
-taken over the *whole* frame rather than over the kept pixels. A mask covering a tenth of
-the frame therefore produces amplitudes roughly a tenth of the average change in the
-moving region.
-
-**Consequence:** contraction amplitudes are not comparable between recordings whose masks
-differ in coverage — the same tissue filling less of the field reads as a smaller
-contraction. Timing measures are unaffected. This is design rather than a bug, so we
-reproduce it in both modes.
-
-### F10 — The time axis closes the gap left by the reference frame
-
-The reference frame is removed from the stack before measuring, so the traces hold one
-point fewer than the recording. The two trace points either side of it are still adjacent
-in the trace but two sampling intervals apart in the recording — with frame 5 as
-reference, trace points 3 and 4 are frames 4 and 6. The time axis adds one interval per
-point regardless, so that step is drawn half its true length.
-
-**Consequence:** every point after the reference frame is placed one frame too early.
-Durations measured between two points are unaffected, since the shift cancels; absolute
-peak times after the reference are off by one frame. Small, and smaller still because the
-reference is usually near the start of the recording.
-
-### F11 — An explicitly set mask end frame excludes itself · *minor*
-
-The loop building the pixel mask stops one frame before the end frame it is given, so that
-frame does not contribute. With the default setting ("use the whole recording") this is
-invisible, because the count it compares against was taken before the reference frame was
-removed and the two off-by-ones cancel exactly. It only takes effect when a user sets an
-end frame deliberately — for instance to exclude a stimulation artefact — and then the last
-frame they asked for is silently left out.
-
-**Consequence:** negligible in practice. One frame among hundreds, contributing to a
-pixel-wise maximum that is subsequently thresholded; it changes the mask only if that frame
-happened to hold a pixel's largest excursion. Recorded for completeness.
-
-### F12 — The peak detection window is one frame narrower than it reads · *minor*
-
-A candidate is compared against its neighbours out to `peak_window/2 - 1` on each side, so
-the default of 20 examines a 19-point neighbourhood. A peak exactly 10 points away from a
-higher one is admitted. This is a definition detail rather than a mistake — "a window of 20
-frames" centred on a point is inherently ambiguous — but it is worth knowing when choosing
-the parameter, and we reproduce it exactly in both modes because changing it would alter
-every peak list.
-
-A firmer consequence of the same loop: candidates within `peak_window/2` of the start of the
-trace, or `peak_window/2 + 1` of its end, are never examined at all. **A beat at the very
-start of a recording cannot be detected.** With the default that is the first ten points.
-
-### F13 — One beat with too few baseline points narrows all the later ones · *moderate*
+#### F7 — One beat with too few baseline points narrows all the later ones · *moderate*
 
 This applies only to the flat-baseline mode (`high_freq_baseline = False`). When a beat does
 not offer enough flat points to average, the macro reduces the number of points to average —
@@ -330,6 +294,85 @@ beats are processed in, and a single bad beat degrades the beats after it but no
 The printed warning names the beat that triggered the reduction but not the ones it affects.
 `high_freq_baseline = True`, which we believe is the client's setting, is unaffected — worth
 confirming (see Q3).
+
+### Reproduced as they are
+
+Behaviour we do not correct in either mode. F8 and F9 are implementation quirks like those
+above — they are documented in `LEGACY_MODE.md` too — but they are definitions rather than
+mistakes, and changing them would silently alter every result. The rest concern a naming
+convention, the original's workflow, someone else's port, or a deliberate design choice.
+
+#### F8 — The peak detection window is one frame narrower than it reads · *minor*
+
+A candidate is compared against its neighbours out to `peak_window/2 - 1` on each side, so
+the default of 20 examines a 19-point neighbourhood. A peak exactly 10 points away from a
+higher one is admitted. This is a definition detail rather than a mistake — "a window of 20
+frames" centred on a point is inherently ambiguous — but it is worth knowing when choosing
+the parameter, and we reproduce it exactly in both modes because changing it would alter
+every peak list.
+
+A firmer consequence of the same loop: candidates within `peak_window/2` of the start of the
+trace, or `peak_window/2 + 1` of its end, are never examined at all. **A beat at the very
+start of a recording cannot be detected.** With the default that is the first ten points.
+
+#### F9 — The first selected percentage silently defines three other measures
+
+The chosen percentage levels look like an independent list of extra outputs, but the
+*first* one does more: its crossing points on the two flanks are what "time-to-peak",
+"relaxation time" and "contraction duration" are measured from. With the usual selection
+starting at 10%, contraction duration is therefore measured 10% above baseline — which the
+column name does say — but deselecting 10% would silently change the definition of three
+headline measures. We keep the behaviour, require the levels to be given in ascending
+order, and document it.
+
+#### F10 — Why the earlier Python attempt gave different results
+
+The client's colleague attributed the discrepancy to OpenCV versus FIJI arithmetic. That
+is almost certainly not the cause — `cv2.absdiff` on 32-bit floats is identical to numpy's
+subtraction. The real differences are that three algorithms were replaced rather than
+ported: reference-frame selection uses "quietest consecutive frame difference" instead of
+the phase-plane method; peak detection uses `scipy.signal.find_peaks` with a prominence
+criterion instead of the macro's sliding-window-and-threshold rule; and flank crossings
+use a different rule than the macro's "three consecutive points beyond the level". The
+reference frame is also never removed from the stack, which the macro does. This is the
+direct justification for D4.
+
+#### F11 — Column naming convention
+
+Percentage output columns are named by `100 - percentage`, so selecting 10% produces a
+column called "90-to-90 transient (ms)". Confusing at first sight, but it matches the CD90
+convention used in the field. We will keep it and document it.
+
+#### F12 — Settings are stored in ImageJ's global preferences
+
+The macro remembers the last-used settings across sessions in ImageJ's preference store.
+Convenient, but it means an analysis cannot be reproduced from its outputs alone, and
+settings leak between unrelated projects. See D6.
+
+#### F13 — Masked amplitudes depend on how much of the frame the mask keeps
+
+The mask is applied by multiplying the difference image, but the average that follows is
+taken over the *whole* frame rather than over the kept pixels. A mask covering a tenth of
+the frame therefore produces amplitudes roughly a tenth of the average change in the
+moving region.
+
+**Consequence:** contraction amplitudes are not comparable between recordings whose masks
+differ in coverage — the same tissue filling less of the field reads as a smaller
+contraction. Timing measures are unaffected. This is design rather than a bug, so we
+reproduce it in both modes.
+
+#### F14 — The time axis closes the gap left by the reference frame
+
+The reference frame is removed from the stack before measuring, so the traces hold one
+point fewer than the recording. The two trace points either side of it are still adjacent
+in the trace but two sampling intervals apart in the recording — with frame 5 as
+reference, trace points 3 and 4 are frames 4 and 6. The time axis adds one interval per
+point regardless, so that step is drawn half its true length.
+
+**Consequence:** every point after the reference frame is placed one frame too early.
+Durations measured between two points are unaffected, since the shift cancels; absolute
+peak times after the reference are off by one frame. Small, and smaller still because the
+reference is usually near the start of the recording.
 
 ---
 

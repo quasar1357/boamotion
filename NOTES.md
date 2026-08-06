@@ -1,8 +1,15 @@
 # Working notes
 
-Internal notes for developing `boamotion`. Client-facing material lives in
-[`DECISIONS.md`](DECISIONS.md); the original macro's quirks are worked through against its
-own source in [`LEGACY_MODE.md`](LEGACY_MODE.md).
+Internal notes for developing `boamotion`. The other three documents:
+
+- [`HOW_IT_WORKS.md`](HOW_IT_WORKS.md) — what the analysis computes and what each parameter
+  changes, in plain language. The public description of the method.
+- [`DECISIONS.md`](DECISIONS.md) — decisions, open questions and findings to raise with the
+  client. Everything client-facing lives there.
+- [`LEGACY_MODE.md`](LEGACY_MODE.md) — the original macro's quirks worked through against
+  its own source, for whoever maintains the port.
+
+Findings carry an F number that means the same thing in all three.
 
 ## Source material
 

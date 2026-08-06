@@ -172,10 +172,15 @@ crossings also define time-to-peak, relaxation time and contraction duration.
 MUSCLEMOTION is a well-designed and widely used tool, and the items below are not a
 criticism of the science. They are implementation details we had to decide how to handle
 in order to reproduce its output faithfully. With `legacy=True`, boamotion behaves as the
-original does; with `legacy=False` each is corrected. They are ordered by how much they can
-move the resulting numbers.
+original does throughout; `legacy=False` corrects F1 to F7. F8 and F9 are definitions
+rather than mistakes, so they are kept in both modes.
 
-**1. The unity-line filter never runs.** In the reference-frame detection, the array
+The F numbers are shared with `DECISIONS.md`, which records what each means for results,
+and with `LEGACY_MODE.md`, which shows the original source and works the mechanism through.
+They follow the analysis from the reference frame through to the transients, rather than
+running in order of importance — see the closing paragraph for that.
+
+**F1 — The unity-line filter never runs.** In the reference-frame detection, the array
 holding the unity-line scores is allocated with `n_low_values` entries but the loop that
 fills it stops one short, leaving the final entry at zero. Every real score is positive, so
 that leftover zero always wins the minimisation that follows. The effect is that
@@ -186,17 +191,25 @@ near-identical quiet frames, so the result is usually still reasonable, which is
 this went unnoticed; but it is fragile in exactly the fast, symmetric case where the method
 is already known to struggle.
 
-**2. The peak threshold uses an arbitrary reference value.** The threshold is computed
+**F2 — A one-frame offset** in the reference-frame search: the motion trace is computed
+relative to `ref_search_start` but then sliced with absolute indices.
+
+**F3 — An explicitly set mask end frame excludes itself.** The frame named as the end of
+the mask range does not contribute to the mask. Invisible at the default setting, where two
+off-by-ones cancel.
+
+**F4 — The mask holds 0 and 255 rather than 0 and 1.** The trace multiplies by the mask
+directly, so all amplitudes are scaled by 255. Harmless given arbitrary units, but it must
+be reproduced to match the original's numbers.
+
+**F5 — The peak threshold uses an arbitrary reference value.** The threshold is computed
 relative to `trace[reference_frame_number]`, indexing the contraction *trace* with a
 *frame number*. The intent is that the baseline is near zero, and since the trace usually
 is near zero early on the result is often acceptable. If the reference frame number
 happens to fall on or near a peak, however, the threshold shifts and peaks are wrongly
 admitted or dropped.
 
-**3. A one-frame offset** in the reference-frame search: the motion trace is computed
-relative to `ref_search_start` but then sliced with absolute indices.
-
-**4. A single detected peak loses its baseline.** If exactly one peak is found, a literal
+**F6 — A single detected peak loses its baseline.** If exactly one peak is found, a literal
 `false` (evaluating to 0) is appended to the peak list so that later array arithmetic
 works. No extra result row appears, but the real beat now looks as though it has a
 neighbour at position 0, and the distances derived from that neighbour come out negative.
@@ -204,21 +217,22 @@ In the flat-baseline mode this leaves the baseline at zero, so the reported cont
 amplitude is the raw peak height rather than the height above rest. It affects short or
 slowly beating recordings.
 
-**5. The first percentage silently defines three other measures**, as described above.
+**F7 — A baseline shortage narrows every later beat.** In the flat-baseline mode, a beat
+that does not offer enough flat points to average reduces the number of points used — but
+it reduces the setting itself rather than a per-beat copy, so every *later* beat in the
+recording averages fewer points too, and the count only ever falls. One noisy beat early on
+can leave the rest of the recording with baselines averaged over one or two points.
+
+**F8 — The peak window is a frame narrower than it names**, comparing each candidate
+against its neighbours out to `peak_window/2 - 1` rather than `peak_window/2`. The same loop
+never examines the first or last half-window of the trace at all, so a beat at the very
+start of a recording cannot be detected.
+
+**F9 — The first percentage silently defines three other measures**, as described above.
 This only matters when the lowest level is deselected, at which point time-to-peak and
 relaxation time change meaning without warning.
 
-**6. The mask holds 0 and 255 rather than 0 and 1.** The trace multiplies by the mask
-directly, so all amplitudes are scaled by 255. Harmless given arbitrary units, but it must
-be reproduced to match the original's numbers.
-
-In practice items 1 and 2 can genuinely change results, item 3 shifts them slightly, item 4
-affects edge cases only, item 5 depends on settings, and item 6 is a constant factor.
-Three smaller items complete the list: when a mask end frame is set explicitly, that frame
-itself does not contribute to the mask; the peak window examines one frame less than it
-names, and never examines the very start or end of the trace; and in the flat-baseline mode
-a beat with too few flat points permanently reduces the number averaged for every later
-beat.
-
-Each of these is shown in the original's own source, with the mechanism worked through, in
-[`LEGACY_MODE.md`](LEGACY_MODE.md).
+In practice F1 and F5 can genuinely change results, and F7 matters whenever the
+flat-baseline mode is used. F2 shifts numbers slightly, F3 and F6 affect edge cases only,
+F4 is a constant factor, F8 changes which beats are found at the ends of a recording, and
+F9 depends on which percentage levels are selected.
