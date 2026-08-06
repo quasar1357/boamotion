@@ -15,7 +15,7 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def motion_pixel_mask(
+def build_motion_pixel_mask(
     frames,
     reference_frame: int,
     *,
@@ -65,7 +65,7 @@ def motion_pixel_mask(
     return mask
 
 
-def contraction_trace(
+def measure_contraction(
     frames,
     reference_frame: int,
     *,
@@ -85,7 +85,7 @@ def contraction_trace(
     Args:
         frames: Anything indexable that yields 2-D frames, such as a FrameSequence.
         reference_frame: The frame at rest, 1-based.
-        mask: Boolean mask from motion_pixel_mask, or None to use every pixel.
+        mask: Boolean mask from build_motion_pixel_mask, or None to use every pixel.
         legacy: Reproduce the original macro, which weights kept pixels by 255
             rather than 1. That scales the whole trace by a constant.
     """
@@ -103,7 +103,7 @@ def contraction_trace(
     return values
 
 
-def speed_trace(
+def measure_speed(
     frames,
     reference_frame: int,
     *,

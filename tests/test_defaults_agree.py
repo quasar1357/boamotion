@@ -6,22 +6,22 @@ import inspect
 import pytest
 
 from boamotion import (
-    beat_baselines,
-    contraction_trace,
+    build_motion_pixel_mask,
     detect_reference_frame,
+    find_baselines,
     find_peaks,
-    motion_pixel_mask,
-    speed_trace,
+    measure_contraction,
+    measure_speed,
 )
 from boamotion.params import Params
 
 FUNCTIONS = [
     detect_reference_frame,
-    motion_pixel_mask,
-    contraction_trace,
-    speed_trace,
+    build_motion_pixel_mask,
+    measure_contraction,
+    measure_speed,
     find_peaks,
-    beat_baselines,
+    find_baselines,
 ]
 
 # Arguments that carry data rather than a setting, so Params does not define them.

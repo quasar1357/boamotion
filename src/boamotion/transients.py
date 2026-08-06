@@ -57,7 +57,7 @@ def find_peaks(
     return np.array(peaks, dtype=int)
 
 
-def beat_baselines(
+def find_baselines(
     trace,
     peaks,
     *,
@@ -68,9 +68,9 @@ def beat_baselines(
 ) -> np.ndarray:
     """Find the resting level each beat is measured from, one value per peak.
 
-    Each beat looks backwards over the half of the gap to the previous peak. The
-    high-frequency method takes the lowest point there, which needs no rest period;
-    the other averages the flattest points, which is steadier but does.
+    Each beat looks backwards over half the gap to the previous peak. The
+    high-frequency method takes the lowest point in that range; the other averages the
+    flattest points, which is steadier but needs a genuine rest period.
 
     Args:
         trace: The contraction trace.

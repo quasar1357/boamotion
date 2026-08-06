@@ -95,7 +95,9 @@ worth the explicit test.
 
 ## Plan and progress
 
-One small, reviewable commit per step; notebook updates get their own commit.
+One reviewable commit per step, grouping what belongs together. Notebook updates are
+usually their own commit, except when a code change forces them — a rename has to carry
+the notebook with it or the repo is inconsistent at that commit.
 
 | | Step | |
 |---|---|---|
@@ -106,9 +108,9 @@ One small, reviewable commit per step; notebook updates get their own commit.
 | | 5 TIFF sequence loader | done |
 | | 6 Synthetic recording | done |
 | **C** | 7 `detect_reference_frame` | done |
-| | 8 `motion_pixel_mask` | done |
-| | 9 `contraction_trace`, `speed_trace` | done |
-| | 10a `find_peaks` and `beat_baselines` | done |
+| | 8 `build_motion_pixel_mask` | done |
+| | 9 `measure_contraction`, `measure_speed` | done |
+| | 10a `find_peaks` and `find_baselines` | done |
 | | 10b `analyse_transients` — levels, flank crossings, per-beat table | **next** |
 | **D** | 11 `Result` object and the seven output files | |
 | | 12 The three figures | |

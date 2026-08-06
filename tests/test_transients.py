@@ -4,10 +4,10 @@ import numpy as np
 import pytest
 
 from boamotion import (
-    beat_baselines,
-    contraction_trace,
+    build_motion_pixel_mask,
+    find_baselines,
     find_peaks,
-    motion_pixel_mask,
+    measure_contraction,
     synthetic_recording,
 )
 
@@ -35,8 +35,8 @@ def peak_indices(recording, reference_frame=1):
 
 def synthetic_trace():
     recording = synthetic_recording(noise=0.01, seed=0)
-    mask = motion_pixel_mask(recording.frames, 1)
-    return contraction_trace(recording.frames, 1, mask=mask), recording
+    mask = build_motion_pixel_mask(recording.frames, 1)
+    return measure_contraction(recording.frames, 1, mask=mask), recording
 
 
 # --- finding the beats ---------------------------------------------------------------
@@ -151,7 +151,7 @@ def test_a_window_below_two_is_rejected():
 def test_high_frequency_baseline_takes_the_lowest_point_before_the_beat():
     trace, peaks = beat_train()
     trace[peaks[1] - 3] = 4.0  # below the resting level, and inside the search range
-    baselines = beat_baselines(trace, peaks, high_freq_baseline=True)
+    baselines = find_baselines(trace, peaks, high_freq_baseline=True)
     assert baselines.tolist() == [10.0, 4.0, 10.0, 10.0]
 
 
@@ -163,11 +163,11 @@ def test_a_dip_more_than_halfway_back_belongs_to_no_beat_at_all():
 
     ignored = trace.copy()
     ignored[halfway - 2] = 4.0
-    assert beat_baselines(ignored, peaks, high_freq_baseline=True).tolist() == [10.0] * 4
+    assert find_baselines(ignored, peaks, high_freq_baseline=True).tolist() == [10.0] * 4
 
     seen = trace.copy()
     seen[halfway + 2] = 4.0
-    assert beat_baselines(seen, peaks, high_freq_baseline=True).tolist() == [
+    assert find_baselines(seen, peaks, high_freq_baseline=True).tolist() == [
         10.0,
         4.0,
         10.0,
@@ -177,27 +177,27 @@ def test_a_dip_more_than_halfway_back_belongs_to_no_beat_at_all():
 
 def test_flat_baseline_averages_the_quiet_points_before_the_beat():
     trace, peaks = beat_train()
-    baselines = beat_baselines(trace, peaks, high_freq_baseline=False)
+    baselines = find_baselines(trace, peaks, high_freq_baseline=False)
     assert baselines.tolist() == pytest.approx([10.0] * 4)
 
 
 def test_both_baseline_modes_agree_on_a_flat_rest():
     trace, _ = synthetic_trace()
     peaks = find_peaks(trace, reference_frame=0, peak_window=16)
-    lowest = beat_baselines(trace, peaks, high_freq_baseline=True)
-    flattest = beat_baselines(trace, peaks, high_freq_baseline=False)
+    lowest = find_baselines(trace, peaks, high_freq_baseline=True)
+    flattest = find_baselines(trace, peaks, high_freq_baseline=False)
     assert flattest == pytest.approx(lowest, rel=0.1)
 
 
 def test_no_peaks_gives_no_baselines():
     trace, _ = beat_train()
-    assert beat_baselines(trace, []).tolist() == []
+    assert find_baselines(trace, []).tolist() == []
 
 
 def test_baselines_are_reported(caplog):
     trace, peaks = beat_train()
     with caplog.at_level(logging.INFO):
-        beat_baselines(trace, peaks)
+        find_baselines(trace, peaks)
     assert "Baselines for 4 beat(s)" in caplog.text
 
 
@@ -212,12 +212,12 @@ def test_a_lone_peak_gets_a_zero_baseline_in_legacy_mode():
 
     # The appended phantom peak reverses the range the steepest rise is measured over,
     # leaving it at zero, so no point can count as flat and the average is empty.
-    assert beat_baselines(trace, peak, high_freq_baseline=False, legacy=True).tolist() == [0.0]
+    assert find_baselines(trace, peak, high_freq_baseline=False, legacy=True).tolist() == [0.0]
 
     # Corrected, the lone beat is simply the first beat, and its baseline is a genuine
     # resting value rather than zero.
     rest = trace[: peak[0] - 5]
-    corrected = beat_baselines(trace, peak, high_freq_baseline=False, legacy=False)
+    corrected = find_baselines(trace, peak, high_freq_baseline=False, legacy=False)
     assert rest.min() <= corrected[0] <= rest.max()
 
 
@@ -226,7 +226,7 @@ def test_a_lone_peak_is_unaffected_in_the_high_frequency_mode():
     trace = trace[:40]
     peak = find_peaks(trace, reference_frame=0, peak_window=16)
     for legacy in (True, False):
-        baseline = beat_baselines(trace, peak, high_freq_baseline=True, legacy=legacy)
+        baseline = find_baselines(trace, peak, high_freq_baseline=True, legacy=legacy)
         assert baseline[0] == pytest.approx(trace[: peak[0]].min())
 
 
@@ -253,8 +253,8 @@ def drifting_rest_train():
 
 def test_a_baseline_shortage_narrows_every_later_beat():
     noisy, calm, peaks = drifting_rest_train()
-    narrowed = beat_baselines(noisy, peaks, high_freq_baseline=False, legacy=True)
-    intact = beat_baselines(calm, peaks, high_freq_baseline=False, legacy=True)
+    narrowed = find_baselines(noisy, peaks, high_freq_baseline=False, legacy=True)
+    intact = find_baselines(calm, peaks, high_freq_baseline=False, legacy=True)
 
     # No flat points before the first beat, so its own baseline collapses to zero.
     assert narrowed[0] == 0.0
@@ -269,13 +269,13 @@ def test_a_baseline_shortage_narrows_every_later_beat():
 
 def test_the_shortage_is_confined_to_its_own_beat_when_corrected():
     noisy, calm, peaks = drifting_rest_train()
-    narrowed = beat_baselines(noisy, peaks, high_freq_baseline=False, legacy=False)
-    intact = beat_baselines(calm, peaks, high_freq_baseline=False, legacy=False)
+    narrowed = find_baselines(noisy, peaks, high_freq_baseline=False, legacy=False)
+    intact = find_baselines(calm, peaks, high_freq_baseline=False, legacy=False)
     assert narrowed[1] == pytest.approx(intact[1])
 
 
 def test_the_shortage_warning_names_the_beat_that_caused_it(caplog):
     noisy, _, peaks = drifting_rest_train()
     with caplog.at_level(logging.WARNING):
-        beat_baselines(noisy, peaks, high_freq_baseline=False, legacy=True)
+        find_baselines(noisy, peaks, high_freq_baseline=False, legacy=True)
     assert "before peak 0" in caplog.text
