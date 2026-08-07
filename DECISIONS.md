@@ -175,8 +175,15 @@ finding in [`HOW_IT_WORKS.md`](HOW_IT_WORKS.md) and in [`LEGACY_MODE.md`](LEGACY
 so a finding can be followed from its consequence here, to its plain-language description
 there, to the original source and the mechanism worked through line by line.
 
-They divide into the ones we treat as mistakes and correct, and the ones we accept and
-reproduce as they are. Separately, **F1 to F9 are quirks of the original's implementation**
+They are ordered by how much there is to do about them: first the ones we treat as
+mistakes and correct, then the ones we keep although a better option exists, and last
+the ones that are simply observations, where nothing is wrong and nothing is proposed.
+
+*To settle at the final overhaul:* these groups have grown organically and two items sit
+awkwardly. F12 is filed under "reproduced as they are" although we do the opposite — we
+replaced the preference store outright, judging it not worth reproducing, which is a
+fourth category of its own. F13 and F14 belong under "kept, though a better option
+exists". F10 is not macro behaviour at all and would sit better inside D4. Separately, **F1 to F9 are quirks of the original's implementation**
 and each has a section of its own number in `LEGACY_MODE.md`; F10 to F14 are observations of
 another kind and have none.
 
@@ -190,6 +197,14 @@ another kind and have none.
 | F5 | The peak threshold uses an arbitrary sample of the trace | moderate |
 | F6 | A single detected peak loses its baseline | edge case |
 | F7 | A baseline shortage narrows every later beat | moderate |
+| F15 | The contraction-duration column is labelled 10% whatever was used | moderate |
+| F16 | A measurement that could not be found is written as 0 | moderate |
+| F17 | The output file names mix conventions | cosmetic |
+| | **Kept, though a better option exists** | |
+| F18 | The mask threshold is fixed at mean + 1 SD | moderate |
+| F19 | The three-point noise guard is not adjustable | moderate |
+| F20 | The reference frame is dropped rather than accounted for | minor |
+| F21 | Peak detection is the macro's own, not a library algorithm | minor |
 | | **Reproduced as they are** | |
 | F8 | The peak window is one frame narrower than it reads | minor |
 | F9 | The first percentage silently defines three other measures | by design |
@@ -294,6 +309,88 @@ beats are processed in, and a single bad beat degrades the beats after it but no
 The printed warning names the beat that triggered the reduction but not the ones it affects.
 `high_freq_baseline = True`, which we believe is the client's setting, is unaffected — worth
 confirming (see Q3).
+
+#### F15 — The contraction-duration column is labelled 10% whatever level was used · *moderate*
+
+The header of that column is a hard-coded string, `Contraction duration [10% above baseline]
+(ms)`, while the number beneath it is measured at whatever the *first* percentage happens to
+be. Choose levels starting at 20% and the column still claims 10%.
+
+**Consequence:** this is F9 surfacing in the output. As long as the list starts at 10% the
+header is accurate, which is why it goes unnoticed; change the first level and the results
+file misstates what was measured, with nothing to warn a later reader. Corrected by
+`legacy=False`, which writes the level actually used.
+
+#### F16 — A measurement that could not be found is written as 0 · *moderate*
+
+When a crossing cannot be located, the macro sets the measurement to `false`, and its results
+table records that as the number **0**. A relaxation time that could not be measured is
+therefore indistinguishable from one of 0 ms. The same goes for the first beat's peak-to-peak
+time, which has no predecessor and is never set at all.
+
+**Consequence:** the common case is the last beat of a recording, whose falling crossing often
+falls outside the search range. Anyone averaging a column across beats silently includes those
+zeros and gets a value pulled toward zero. Corrected by `legacy=False`, which leaves the cell
+empty so the two can be told apart.
+
+#### F17 — The output file names mix conventions · *cosmetic*
+
+The original writes `contraction.txt` and `speed-of-contraction.txt` in lower case, but
+`Contraction.jpg`, `Speed of contraction.jpg` and
+`Comparison calculated (red) and measured (black) speed.jpg` capitalised — one of them with
+spaces and brackets in the name — into a folder called `<name>-Contr-Results`.
+
+**Consequence:** none for the numbers. Spaces and brackets in file names are awkward to
+handle from a shell, which matters once results are moved around on a cluster. `legacy=True`
+reproduces the original names exactly, which is what a diff against FIJI output needs;
+`legacy=False` writes lower-case hyphenated names into `<name>-results`.
+
+### Kept, though a better option exists
+
+Reproduced faithfully, and defensible as they stand, but an improvement is available if the
+client ever wants it. None is behind `legacy`, because none is a mistake.
+
+#### F18 — The mask threshold is fixed at mean + 1 standard deviation · *moderate*
+
+The pixel mask keeps whatever exceeds `mean + 1 SD` of the maximum-change map. That
+multiplier is not exposed anywhere, so the only way to change how much of the frame is kept
+is to change the frame.
+
+**A better option:** expose the multiplier, or choose the threshold from the data — the
+map is usually strongly bimodal, so Otsu's method would adapt to sparse or crowded fields
+without a magic number. Worth revisiting if tissue occupies very little of the frame, where
+1 SD may keep too much background.
+
+#### F19 — The three-point noise guard is not adjustable · *moderate*
+
+A flank crossing requires three consecutive points beyond the level. At the 60-75 fps the
+manual asks for, three points span 40-50 ms and the rule is a sensible noise filter. At the
+client's 25 fps they span **120 ms**, a substantial part of a flank, which biases every
+crossing outward and so lengthens the durations measured from it.
+
+**A better option:** make the count a parameter, or derive it from the frame rate. See Q1 —
+this is a second reason the frame rate matters beyond timing resolution.
+
+#### F20 — The reference frame is dropped rather than accounted for · *minor*
+
+The reference frame is removed from the recording before measuring, so it has no point in
+either trace. That is reasonable — its contraction value would be exactly zero by
+construction, which is not a measurement — but it leaves a gap that later code has to
+remember, and F14 is the consequence of forgetting it.
+
+**A better option:** keep the point and mark it, or keep a frame-number axis alongside the
+trace, so nothing downstream has to reason about the gap. We reproduce the removal because
+every trace index in the original's output depends on it.
+
+#### F21 — Peak detection is the macro's own algorithm, not a library one · *minor*
+
+Peaks are found with a sliding-window maximum plus a height threshold, rather than with
+`scipy.signal.find_peaks` and a prominence criterion. See D4: we ported it deliberately,
+because substituting it is exactly what made the earlier Python attempt disagree (F10).
+
+**A better option:** prominence-based detection copes better with a drifting baseline, and
+needs less tuning per recording. Worth offering as an alternative once the port is validated
+— but only as an option, never as a silent replacement.
 
 ### Reproduced as they are
 

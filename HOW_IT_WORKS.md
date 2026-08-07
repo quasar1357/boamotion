@@ -172,8 +172,8 @@ crossings also define time-to-peak, relaxation time and contraction duration.
 MUSCLEMOTION is a well-designed and widely used tool, and the items below are not a
 criticism of the science. They are implementation details we had to decide how to handle
 in order to reproduce its output faithfully. With `legacy=True`, boamotion behaves as the
-original does throughout; `legacy=False` corrects F1 to F7. F8 and F9 are definitions
-rather than mistakes, so they are kept in both modes.
+original does throughout; `legacy=False` corrects all of these except F8 and F9, which
+are definitions rather than mistakes and so are kept in both modes.
 
 The F numbers are shared with `DECISIONS.md`, which records what each means for results,
 and with `LEGACY_MODE.md`, which shows the original source and works the mechanism through.
@@ -231,6 +231,18 @@ start of a recording cannot be detected.
 **F9 — The first percentage silently defines three other measures**, as described above.
 This only matters when the lowest level is deselected, at which point time-to-peak and
 relaxation time change meaning without warning.
+
+**F15 — The contraction-duration column is labelled 10% whatever level was used.** The
+header is hard-coded, so if the first percentage is not 10% the results file misstates what
+was measured.
+
+**F16 — A measurement that could not be found is written as 0.** A crossing that could not be
+located is stored as `false`, which the results table records as zero — indistinguishable from
+a genuine measurement of zero. Averaging such a column pulls the answer toward zero.
+
+**F17 — The output file names mix conventions.** Lower-case text files, capitalised
+images, spaces and brackets in one of them. No effect on any number; `legacy=False`
+writes lower-case hyphenated names instead.
 
 In practice F1 and F5 can genuinely change results, and F7 matters whenever the
 flat-baseline mode is used. F2 shifts numbers slightly, F3 and F6 affect edge cases only,

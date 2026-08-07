@@ -10,13 +10,14 @@ remember why a function has two branches. Line numbers refer to
 `MUSCLEMOTION v1-1beta.ijm`.
 
 **The F numbers are shared across all three files**, so any finding can be followed from
-one to the next. The nine below are F1 to F9 of the fourteen in `DECISIONS.md` — the ones
-that are quirks of the original's implementation.
+one to the next. The eleven below are the quirks of the original's implementation; the
+rest of the findings in `DECISIONS.md` are observations of another kind.
 
-All nine are implemented. F1 to F7 are corrected by `legacy=False`, and run roughly in the
-order the analysis meets them: reference frame, then mask, then transients. F8 and F9 we
-reproduce in **both** modes, because they are definitions rather than mistakes and
-changing them would silently alter every result.
+All are implemented. Every one is corrected by `legacy=False` except F8 and F9, which are
+definitions rather than mistakes and so are reproduced in **both** modes: changing them
+would silently alter every result. They run roughly in the order the analysis meets them —
+reference frame, mask, transients, output — which is numeric order apart from F15 and F16,
+added last and due to be renumbered at the final overhaul.
 
 Three conventions to keep in mind while reading the excerpts. Arrays in the ImageJ macro
 language are **0-based**, but stack slices are **1-based**, and the macro mixes the two
@@ -40,6 +41,9 @@ what makes the all-`+` expression in F2 print `511` instead of `52`.
 | F7 | [A baseline shortage narrows every later beat](#f7--a-baseline-shortage-narrows-every-later-beat) | moderate | `transients.py` `_legacy_flat_average` |
 | F8 | [The peak window is a frame narrower than it reads](#f8--the-peak-window-is-a-frame-narrower-than-it-reads) | minor | `transients.py` `_dominates_neighbours` |
 | F9 | [The first percentage defines three other measures](#f9--the-first-percentage-defines-three-other-measures) | by design | `transients.py` `measure_transients` |
+| F15 | [The duration column is labelled 10% whatever was used](#f15--the-duration-column-is-labelled-10-whatever-was-used) | moderate | `result.py` `original_headers` |
+| F16 | [A measurement that was never found is written as 0](#f16--a-measurement-that-was-never-found-is-written-as-0) | moderate | `result.py` `_write_overview` |
+| F17 | [The output file names mix conventions](#f17--the-output-file-names-mix-conventions) | cosmetic | `result.py` `file_names` |
 
 ---
 
@@ -413,6 +417,80 @@ durations are only computed when the *first* level found both its crossings, and
 level is the lowest, which is the hardest to reach — any level above it crosses nearer the
 peak. So if the first level is found, all of them are. We therefore do not reproduce the
 stale value, and there is nothing to correct.
+
+---
+
+## F15 — The duration column is labelled 10% whatever was used
+
+`transientAnalysis`, line 1243.
+
+```javascript
+setResult("Contraction duration [10% above baseline] (ms)", c, transientDuration);
+```
+
+**What happens.** The header is a literal string while `transientDuration` is measured at
+`percentages[0]`, whatever that is. The two agree only as long as the first level is 10%.
+
+This is F9 reaching the output: the first percentage quietly defines the measure, and here
+it fails to define the label as well. Nothing warns a reader of the file.
+
+**What boamotion does.** `original_headers` writes the literal `10` when `legacy=True` and
+the level actually used otherwise. `test_the_duration_header_is_hard_coded_to_ten_percent_in_legacy_mode`
+pins both, using `percentages=(20, 50)` so the two disagree.
+
+## F16 — A measurement that was never found is written as 0
+
+`transientAnalysis`, lines 1220-1254.
+
+```javascript
+if(lowDown==false){
+    print("lowDown false at peak: "+c);
+    contractionTime=false;
+    transientDuration=false;
+    ...
+}
+...
+setResult("Time-to-peak (ms)", c, contractionTime);
+```
+
+**What happens.** `false` is `0` in the macro language, so a measurement that could not be
+made is stored as the number zero and saved as `0` in the results table. Nothing
+distinguishes it from a genuine zero. The first beat's peak-to-peak time is never set at
+all, and an unset cell also saves as `0`.
+
+The common case is the last beat of a recording, whose falling crossing often lies outside
+the search range — which is exactly what our synthetic recording does.
+
+**What boamotion does.** `_write_overview` fills missing values with `0` when
+`legacy=True`, and leaves the cell empty otherwise, so a reader can tell "not measured"
+from "measured as zero". `test_missing_measurements_are_written_as_zero_in_legacy_mode` and
+its corrected counterpart pin both.
+
+---
+## F17 — The output file names mix conventions
+
+Lines 494, 532, 539 and 801.
+
+```javascript
+contractionFile=getFileName("contraction");          // contraction.txt
+speedFile=getFileName("speed-of-contraction");       // speed-of-contraction.txt
+dirMakeName=saveDir+File.separator+outputName+"-Contr-Results";
+saveAs("Jpeg", savePath+File.separator+parameter);   // Contraction.jpg, Speed of contraction.jpg
+```
+
+**What happens.** The two text files are lower case and hyphenated; the images take their
+names from the plot titles, so they are capitalised, and one of them contains spaces and
+brackets: `Comparison calculated (red) and measured (black) speed.jpg`. The folder is
+`<name>-Contr-Results`.
+
+Nothing here affects a number. It matters only because file names get typed, globbed and
+handed to other tools, and spaces and brackets make all three harder — worth caring about
+once results are moved around on a cluster.
+
+**What boamotion does.** `file_names` returns the original's names when `legacy=True`, so a
+diff against FIJI output lines up file for file, and lower-case hyphenated ones under
+`<name>-results` otherwise. `test_no_output_name_contains_a_space_or_bracket` pins the
+corrected side.
 
 ---
 

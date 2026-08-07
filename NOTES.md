@@ -64,7 +64,8 @@ amplitudes and percentage transient durations.
 
 ## Original outputs (7 files per recording)
 
-`Contraction.txt`, `Speed-of-contraction.txt`, `Contraction.jpg`, `Speed of contraction.jpg`,
+`contraction.txt`, `speed-of-contraction.txt` (lower case; two tab-separated columns,
+time and value, no header), `Contraction.jpg`, `Speed of contraction.jpg`,
 `Comparison calculated (red) and measured (black) speed.jpg`, `Overview-results.txt`
 (tab-separated table), `Log_file.txt`. Written to `<saveDir>/<name>-Contr-Results/`.
 
@@ -119,8 +120,8 @@ the notebook with it or the repo is inconsistent at that commit.
 | | 9 `measure_contraction`, `measure_speed` | done |
 | | 10a `find_peaks` and `find_baselines` | done |
 | | 10b `measure_transients` — levels, flank crossings, per-beat table | done |
-| **D** | 11 `Result` object and the seven output files | **next** |
-| | 12 The three figures | |
+| **D** | 11 `Result` object and the output files | done |
+| | 12 The three figures | **next** |
 | | 13 `Boa`, the user-facing class, and logging | |
 | **E** | 14 Validation against FIJI output | needs data |
 | | 15 Example notebook on the client's recording | needs data |
@@ -131,11 +132,24 @@ the notebook with it or the repo is inconsistent at that commit.
 | | 19 SLURM array job | |
 | | 20 Performance work, if profiling justifies it | |
 
-Modules still to come: `result.py` (steps 11 and 12), `analysis.py` (13).
+Modules still to come: the figures in `result.py` (step 12), and `analysis.py` (13).
 
-Step 11 has to settle the original's output column names. The macro builds them with
-`100-percentages[m]+"-to-"+...`, which relies on `-` binding tighter than `+` in the
-macro language; worth confirming against real FIJI output when we have some.
+## Check these first against real FIJI output
+
+Step 14 has no data yet, and parts of the output format are inferred rather than
+observed. These are the places a diff would fail first, in the order worth checking:
+
+1. **The percentage column names.** We write `<100-p>-to-<100-p> transient (ms)`, which
+   assumes the macro language binds `-` tighter than `+`. Any other precedence makes that
+   expression a type error, and the CD90 convention says the result should be `90-to-90`,
+   so this is the only reading that works — but it is inference, not observation.
+2. **The `Overview-results.txt` layout.** We write a row-number column headed with a single
+   space, rows numbered from 1, tab separated. That is what ImageJ's *Save As Results* is
+   understood to produce; the exact header cell and number formatting are unverified.
+3. **Missing measurements as `0`** (F16). We assume `setResult` with `false` stores the
+   number zero.
+4. **Number formatting** in all three text files — decimal places, and whether ImageJ
+   writes integers without a decimal point.
 
 ## Where each finding lives
 
@@ -158,7 +172,14 @@ own columns: whether we **correct** it, and whether it is **written** yet.
 | F11 | `result.py` — the output column names | no | **step 11** |
 | F12 | `params.py` — superseded by `Params` and YAML, per D6 | no | step 4 |
 | F13 | `traces.py` — `_mean_change` averages the whole frame | no | step 9 |
-| F14 | `result.py` — the time axis, and the figures drawn on it | no | **step 12** |
+| F14 | `result.py` — `time_ms`, and the figures drawn on it | no | step 11 |
+| F15 | `result.py` — `original_headers` | yes | step 11 |
+| F16 | `result.py` — `_write_overview` | yes | step 11 |
+| F17 | `result.py` — `file_names` | yes | step 11 |
+| F18 | `traces.py` — the fixed `mean + std` threshold | no | step 8 |
+| F19 | `transients.py` — the fixed three-point test in `_crossing_before` | no | step 10b |
+| F20 | `traces.py` — `_frames_without_reference` | no | step 9 |
+| F21 | `transients.py` — `find_peaks` | no | step 10a |
 
 Two traps in reading this. "We do not correct it" does not mean there is nothing to write:
 F11 and F14 are behaviours we deliberately copy, and copying them is still work. And a
