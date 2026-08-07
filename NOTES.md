@@ -123,9 +123,9 @@ the notebook with it or the repo is inconsistent at that commit.
 | | 9 `measure_contraction`, `measure_speed` | done |
 | | 10a `find_peaks` and `find_baselines` | done |
 | | 10b `measure_transients` — levels, flank crossings, per-beat table | done |
-| **D** | 11 `Result` object and the output files | done |
-| | 12 The three figures | done |
-| | 13 `Boa`, the user-facing class, and logging | done |
+| **D** | 11 `Result` object and the output files | done, **to review** |
+| | 12 The three figures | done, **to review** |
+| | 13 `Boa`, the user-facing class, and logging | done, **to review** |
 | **E** | 14 Validation against FIJI output | **next**, needs data |
 | | 15 Example notebook on the client's recording | needs data |
 | | — prototype complete — | |
