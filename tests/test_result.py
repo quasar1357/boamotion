@@ -128,6 +128,7 @@ def test_every_expected_file_is_written(tmp_path):
     assert sorted(p.name for p in target.iterdir()) == [
         "Comparison calculated (red) and measured (black) speed.jpg",
         "Contraction.jpg",
+        "Log_file.txt",
         "Overview-results.txt",
         "Speed of contraction.jpg",
         "beats.csv",
@@ -145,6 +146,7 @@ def test_corrected_names_are_lower_case_throughout(tmp_path):
         "beats.csv",
         "contraction.png",
         "contraction.txt",
+        "log.txt",
         "overview-results.txt",
         "parameters.yaml",
         "run-summary.txt",
@@ -267,23 +269,23 @@ def test_adjustments_are_recorded_when_the_analysis_had_to_change_something(tmp_
         speed=result.speed,
         beats=result.beats,
         mask=result.mask,
-        adjustments=("n_low_values reduced from 20 to 15",),
+        warnings=("n_low_values reduced from 20 to 15",),
     )
     text = (adjusted.save(tmp_path) / "run-summary.txt").read_text(encoding="utf-8")
-    assert "settings the analysis had to change" in text
+    assert "warnings from this run" in text
     assert "n_low_values reduced from 20 to 15" in text
 
 
 def test_no_adjustments_means_no_such_section(tmp_path):
     _, target = written(tmp_path)
-    assert "had to change" not in (target / "run-summary.txt").read_text(encoding="utf-8")
+    assert "warnings from this run" not in (target / "run-summary.txt").read_text(encoding="utf-8")
 
 
 def test_writing_is_reported(tmp_path, caplog):
     result = analysed()
     with caplog.at_level(logging.INFO):
         result.save(tmp_path)
-    assert "Wrote 9 files" in caplog.text
+    assert "Wrote 10 files" in caplog.text
 
 
 # --- the three figures ----------------------------------------------------------------

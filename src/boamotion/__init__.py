@@ -11,8 +11,10 @@ Modules, in the order the analysis uses them:
     traces      stages 2 and 3 - pixel mask, contraction and speed
     transients  stage 4 - per-beat measurements
     result      collecting a finished analysis, and writing it out
+    analysis    Boa, which runs every stage in order
 """
 
+from boamotion.analysis import Boa
 from boamotion.frames import FrameSequence, load_frames
 from boamotion.params import Params
 from boamotion.reference import detect_reference_frame
@@ -24,6 +26,7 @@ from boamotion.transients import find_baselines, find_peaks, measure_transients
 __version__ = "0.0.1"
 
 __all__ = [
+    "Boa",
     "FrameSequence",
     "Params",
     "Result",

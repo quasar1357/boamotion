@@ -82,6 +82,9 @@ Applied from the start so the cluster route stays open without doing cluster wor
 
 ## Open items
 
+- **Roman has not yet reviewed steps 11, 12 and 13 in depth** — `result.py`,
+  `analysis.py`, and the findings they turned up (F15 to F22). Worth walking through at
+  the start of the next session before anything new is built on them.
 - Waiting on the client's example data (`A001.zip`, TIFF sequence, ~800 frames, 25 fps).
 - Waiting on the `demo/` folder with `demo_stack.tif` and reference outputs, if the client
   has it — it is *not* in the public GitHub repo.
@@ -122,8 +125,8 @@ the notebook with it or the repo is inconsistent at that commit.
 | | 10b `measure_transients` — levels, flank crossings, per-beat table | done |
 | **D** | 11 `Result` object and the output files | done |
 | | 12 The three figures | done |
-| | 13 `Boa`, the user-facing class, and logging | **next** |
-| **E** | 14 Validation against FIJI output | needs data |
+| | 13 `Boa`, the user-facing class, and logging | done |
+| **E** | 14 Validation against FIJI output | **next**, needs data |
 | | 15 Example notebook on the client's recording | needs data |
 | | — prototype complete — | |
 | **F** | 16 Other input formats: TIFF stacks, PNG, AVI | |
@@ -132,7 +135,8 @@ the notebook with it or the repo is inconsistent at that commit.
 | | 19 SLURM array job | |
 | | 20 Performance work, if profiling justifies it | |
 
-Modules still to come: `analysis.py` (step 13).
+Every module the prototype needs now exists. What remains is validation against real
+output, which is blocked on the client's data.
 
 ## Check these first against real FIJI output
 

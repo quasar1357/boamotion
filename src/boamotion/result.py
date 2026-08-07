@@ -54,8 +54,9 @@ class Result:
         speed: The speed trace, shorter by `speed_window` points.
         beats: One row per detected beat, as `measure_transients` returns it.
         mask: The pixel mask used, or None if the whole frame was measured.
-        adjustments: Settings the analysis had to change to fit the recording, as the
-            messages it logged. Empty when everything was used as asked for.
+        warnings: What the run warned about — settings it had to change to fit the
+            recording, and beats it could not fully measure. Empty when nothing came up.
+        log: Everything the run logged, written out as the original writes its log.
     """
 
     name: str
@@ -65,7 +66,8 @@ class Result:
     speed: np.ndarray
     beats: pd.DataFrame
     mask: np.ndarray | None = None
-    adjustments: tuple[str, ...] = field(default=())
+    warnings: tuple[str, ...] = field(default=())
+    log: tuple[str, ...] = field(default=())
 
     @property
     def time_ms(self) -> np.ndarray:
@@ -162,6 +164,8 @@ class Result:
         ):
             figure.savefig(target / names[key], dpi=200)
 
+        _write_lines(target / names["log"], self.log)
+
         self.params.to_yaml(target / "parameters.yaml")
         self.beats.to_csv(target / "beats.csv")
         _write_summary(target / "run-summary.txt", self)
@@ -212,6 +216,7 @@ def file_names(legacy: bool) -> dict[str, str]:
             "contraction": "contraction.txt",
             "speed": "speed-of-contraction.txt",
             "overview": "Overview-results.txt",
+            "log": "Log_file.txt",
             "contraction_figure": "Contraction.jpg",
             "speed_figure": "Speed of contraction.jpg",
             "comparison_figure": "Comparison calculated (red) and measured (black) speed.jpg",
@@ -221,6 +226,7 @@ def file_names(legacy: bool) -> dict[str, str]:
         "contraction": "contraction.txt",
         "speed": "speed-of-contraction.txt",
         "overview": "overview-results.txt",
+        "log": "log.txt",
         "contraction_figure": "contraction.png",
         "speed_figure": "speed-of-contraction.png",
         "comparison_figure": "speed-comparison.png",
@@ -236,6 +242,10 @@ def _new_directory(parent: Path, name: str, suffix: str) -> Path:
     while (parent / f"{base.name}-{version}").exists():
         version += 1
     return parent / f"{base.name}-{version}"
+
+
+def _write_lines(path: Path, lines) -> None:
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def _write_trace(path: Path, times: np.ndarray, values: np.ndarray) -> None:
@@ -269,9 +279,9 @@ def _write_summary(path: Path, result: Result) -> None:
         f"beats detected: {result.n_beats}",
         f"pixel mask: {coverage}",
     ]
-    if result.adjustments:
-        lines += ["", "settings the analysis had to change:"]
-        lines += [f"  - {message}" for message in result.adjustments]
+    if result.warnings:
+        lines += ["", "warnings from this run:"]
+        lines += [f"  - {message}" for message in result.warnings]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

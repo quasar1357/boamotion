@@ -8,7 +8,10 @@ ImageJ/FIJI macro that quantifies muscle contraction from video microscopy.
 The goal is to reproduce the original tool's analysis faithfully while making it usable
 from a notebook or a script, without FIJI and without a GUI.
 
-**Status: early development.** Nothing here is usable yet.
+**Status: prototype complete, not yet validated.** Every stage of the analysis is
+implemented and tested, and a run produces the same set of output files as the original.
+It has not yet been checked against real FIJI output on a real recording, so the numbers
+should not be relied on.
 
 ## Development setup
 
