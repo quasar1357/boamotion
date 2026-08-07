@@ -200,6 +200,7 @@ another kind and have none.
 | F15 | The contraction-duration column is labelled 10% whatever was used | moderate |
 | F16 | A measurement that could not be found is written as 0 | moderate |
 | F17 | The output file names mix conventions | cosmetic |
+| F22 | The speed comparison plot ends in a drop to zero | minor |
 | | **Kept, though a better option exists** | |
 | F18 | The mask threshold is fixed at mean + 1 SD | moderate |
 | F19 | The three-point noise guard is not adjustable | moderate |
@@ -344,6 +345,18 @@ spaces and brackets in the name — into a folder called `<name>-Contr-Results`.
 handle from a shell, which matters once results are moved around on a cluster. `legacy=True`
 reproduces the original names exactly, which is what a diff against FIJI output needs;
 `legacy=False` writes lower-case hyphenated names into `<name>-results`.
+
+#### F22 — The speed comparison plot ends in a drop to zero · *minor*
+
+Before the measured and calculated speed are plotted against each other, both are scaled to
+0-1. The loop that does the scaling stops one element short of the arrays it fills, so the
+last entry of each keeps the zero it was allocated with.
+
+**Consequence:** every comparison figure ends with both curves dropping vertically to the
+axis. It is an artefact of the plotting code, not of the data — the traces themselves are
+fine, and only this figure is affected. Harmless once recognised, but it looks like a real
+feature of the recording, and it is exactly the figure a user is asked to inspect to judge
+whether the measurement is behaving. Corrected by `legacy=False`.
 
 ### Kept, though a better option exists
 

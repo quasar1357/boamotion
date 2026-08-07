@@ -244,6 +244,10 @@ a genuine measurement of zero. Averaging such a column pulls the answer toward z
 images, spaces and brackets in one of them. No effect on any number; `legacy=False`
 writes lower-case hyphenated names instead.
 
+**F22 — The speed comparison plot ends in a drop to zero.** Both curves are scaled to
+0-1 before plotting, by a loop that stops one short, so each keeps a final zero. The
+figure ends in a vertical drop that is not in the data.
+
 In practice F1 and F5 can genuinely change results, and F7 matters whenever the
 flat-baseline mode is used. F2 shifts numbers slightly, F3 and F6 affect edge cases only,
 F4 is a constant factor, F8 changes which beats are found at the ends of a recording, and

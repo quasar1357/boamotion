@@ -1,8 +1,11 @@
 """Collecting a finished analysis, and writing it out.
 
 The original macro's output files are reproduced by name and by format, so its results
-and ours can be diffed directly. Three of the seven are figures, which arrive in step 12,
-and the log file follows the logging in step 13.
+and ours can be diffed directly. The log file follows the logging in step 13.
+
+Figures are built with matplotlib's `Figure` directly rather than through `pyplot`, so
+nothing here needs a display or touches global state — which is what lets the same code
+run on a compute node and inside a notebook.
 
 Alongside them we write the effective parameters and a tidy CSV, which the original has
 no equivalent of. Those use our own column names; the reproduced files use the original's.
@@ -13,9 +16,11 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
+from matplotlib.figure import Figure
 
 from boamotion.params import Params
 
@@ -89,6 +94,52 @@ class Result:
     def n_beats(self) -> int:
         return len(self.beats)
 
+    def comparison_curves(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Time, measured speed and calculated speed, each scaled to 0-1.
+
+        The original normalises both curves before plotting them, so their shapes can be
+        compared even though their units differ, and drops the last point of each.
+        """
+        n = len(self.speed) - 1
+        measured = _to_unit_range(self.speed)[:n]
+        calculated = _to_unit_range(self.calculated_speed)[:n]
+        if self.params.legacy:
+            # legacy: the normalising loop stops one short, leaving both curves at zero
+            measured[-1] = 0.0
+            calculated[-1] = 0.0
+        return np.arange(n) * self.params.sampling_interval_ms, measured, calculated
+
+    def plot_contraction(self) -> Figure:
+        """The contraction trace, with each beat's peak and baseline marked."""
+        figure, ax = _new_figure("Contraction (a.u.)")
+        ax.plot(self.time_ms, self.contraction, color="black", lw=1.0)
+        for peak, baseline in zip(
+            self.beats.get("peak_position", []), self.beats.get("baseline", []), strict=True
+        ):
+            at = peak * self.params.sampling_interval_ms
+            ax.vlines(at, baseline, self.contraction[int(peak)], color="tab:red", lw=1.5)
+            ax.plot(at, self.contraction[int(peak)], "o", color="tab:red", ms=4)
+        return figure
+
+    def plot_speed(self) -> Figure:
+        """The speed trace, which shows two humps per beat."""
+        figure, ax = _new_figure("Speed of contraction (a.u.)")
+        ax.plot(self.speed_time_ms, self.speed, color="black", lw=1.0)
+        return figure
+
+    def plot_speed_comparison(self) -> Figure:
+        """Measured speed against the differentiated contraction trace.
+
+        Where the measurement behaves linearly the two overlap; a visible divergence is
+        a warning that something is wrong.
+        """
+        figure, ax = _new_figure("Normalized contraction speed (a.u.)")
+        times, measured, calculated = self.comparison_curves()
+        ax.plot(times, measured, color="black", lw=1.0, label="measured")
+        ax.plot(times, calculated, color="red", lw=1.0, label="calculated")
+        ax.legend(loc="upper right", fontsize="small")
+        return figure
+
     def save(self, directory) -> Path:
         """Write the results into a new folder under `directory`, and return its path.
 
@@ -103,6 +154,13 @@ class Result:
         _write_trace(target / names["contraction"], self.time_ms, self.contraction)
         _write_trace(target / names["speed"], self.speed_time_ms, self.speed)
         _write_overview(target / names["overview"], self.beats, self.params)
+
+        for key, figure in (
+            ("contraction_figure", self.plot_contraction()),
+            ("speed_figure", self.plot_speed()),
+            ("comparison_figure", self.plot_speed_comparison()),
+        ):
+            figure.savefig(target / names[key], dpi=200)
 
         self.params.to_yaml(target / "parameters.yaml")
         self.beats.to_csv(target / "beats.csv")
@@ -145,7 +203,8 @@ def file_names(legacy: bool) -> dict[str, str]:
     The original mixes conventions — lower-case text files, capitalised images, spaces
     and brackets in one of them, and a folder called `-Contr-Results`. Spaces and
     brackets in particular are awkward from a shell, which matters on a cluster. With
-    `legacy=False` the names are lower case and hyphenated throughout.
+    `legacy=False` the names are lower case and hyphenated throughout, and the figures
+    are PNG rather than JPEG, which is both smaller and lossless for line drawings.
     """
     if legacy:
         return {
@@ -153,12 +212,18 @@ def file_names(legacy: bool) -> dict[str, str]:
             "contraction": "contraction.txt",
             "speed": "speed-of-contraction.txt",
             "overview": "Overview-results.txt",
+            "contraction_figure": "Contraction.jpg",
+            "speed_figure": "Speed of contraction.jpg",
+            "comparison_figure": "Comparison calculated (red) and measured (black) speed.jpg",
         }
     return {
         "folder": "-results",
         "contraction": "contraction.txt",
         "speed": "speed-of-contraction.txt",
         "overview": "overview-results.txt",
+        "contraction_figure": "contraction.png",
+        "speed_figure": "speed-of-contraction.png",
+        "comparison_figure": "speed-comparison.png",
     }
 
 
@@ -208,3 +273,20 @@ def _write_summary(path: Path, result: Result) -> None:
         lines += ["", "settings the analysis had to change:"]
         lines += [f"  - {message}" for message in result.adjustments]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _new_figure(ylabel: str) -> tuple[Figure, Any]:
+    """A plain figure and axes, built without pyplot so no display is needed."""
+    figure = Figure(figsize=(9.0, 3.5), layout="tight")
+    ax = figure.subplots()
+    ax.set_xlabel("Time (ms)")
+    ax.set_ylabel(ylabel)
+    return figure, ax
+
+
+def _to_unit_range(values: np.ndarray) -> np.ndarray:
+    """Scale to 0-1 using the whole array, as the original does before comparing."""
+    low, high = float(values.min()), float(values.max())
+    if high == low:
+        return np.zeros_like(values)
+    return (values - low) / (high - low)

@@ -1,5 +1,6 @@
 import dataclasses
 import logging
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -125,7 +126,10 @@ def test_every_expected_file_is_written(tmp_path):
     _, target = written(tmp_path)
     assert target.name == "A001-Contr-Results"
     assert sorted(p.name for p in target.iterdir()) == [
+        "Comparison calculated (red) and measured (black) speed.jpg",
+        "Contraction.jpg",
         "Overview-results.txt",
+        "Speed of contraction.jpg",
         "beats.csv",
         "contraction.txt",
         "parameters.yaml",
@@ -139,10 +143,13 @@ def test_corrected_names_are_lower_case_throughout(tmp_path):
     assert target.name == "A001-results"
     assert sorted(p.name for p in target.iterdir()) == [
         "beats.csv",
+        "contraction.png",
         "contraction.txt",
         "overview-results.txt",
         "parameters.yaml",
         "run-summary.txt",
+        "speed-comparison.png",
+        "speed-of-contraction.png",
         "speed-of-contraction.txt",
     ]
 
@@ -276,4 +283,78 @@ def test_writing_is_reported(tmp_path, caplog):
     result = analysed()
     with caplog.at_level(logging.INFO):
         result.save(tmp_path)
-    assert "Wrote 6 files" in caplog.text
+    assert "Wrote 9 files" in caplog.text
+
+
+# --- the three figures ----------------------------------------------------------------
+
+
+def test_each_figure_is_drawn_with_the_expected_axes():
+    result = analysed()
+    for figure, ylabel in (
+        (result.plot_contraction(), "Contraction (a.u.)"),
+        (result.plot_speed(), "Speed of contraction (a.u.)"),
+        (result.plot_speed_comparison(), "Normalized contraction speed (a.u.)"),
+    ):
+        ax = figure.axes[0]
+        assert ax.get_xlabel() == "Time (ms)"
+        assert ax.get_ylabel() == ylabel
+
+
+def test_the_contraction_figure_marks_every_beat():
+    result = analysed()
+    ax = result.plot_contraction().axes[0]
+    # one trace line, then a marker line per beat
+    assert len(ax.lines) == 1 + result.n_beats
+    assert len(ax.collections) == result.n_beats  # the baseline-to-peak bars
+
+
+def test_the_comparison_figure_draws_both_curves():
+    result = analysed()
+    ax = result.plot_speed_comparison().axes[0]
+    assert [line.get_label() for line in ax.lines] == ["measured", "calculated"]
+
+
+def test_both_comparison_curves_are_scaled_to_the_same_range():
+    _, measured, calculated = analysed(legacy=False).comparison_curves()
+    for curve in (measured, calculated):
+        assert curve.min() >= 0.0
+        assert curve.max() == pytest.approx(1.0)
+
+
+def test_the_comparison_curves_are_one_point_shorter_than_the_speed_trace():
+    result = analysed()
+    times, measured, calculated = result.comparison_curves()
+    assert len(times) == len(measured) == len(calculated) == len(result.speed) - 1
+
+
+def test_legacy_leaves_both_comparison_curves_at_zero(tmp_path):
+    # The original's normalising loop stops one short, so the last point of each curve
+    # keeps the zero it was allocated with, and the plot ends in a drop to the axis.
+    _, legacy_measured, legacy_calculated = analysed(legacy=True).comparison_curves()
+    assert legacy_measured[-1] == 0.0
+    assert legacy_calculated[-1] == 0.0
+
+    _, measured, calculated = analysed(legacy=False).comparison_curves()
+    assert measured[-1] > 0.0 or calculated[-1] > 0.0
+
+
+def test_the_figures_are_written_as_real_images(tmp_path):
+    _, target = written(tmp_path, legacy=False)
+    for name in ("contraction.png", "speed-of-contraction.png", "speed-comparison.png"):
+        assert (target / name).stat().st_size > 1000
+
+
+def test_the_library_never_reaches_for_pyplot():
+    # Figures are built from matplotlib's Figure directly, so nothing in the analysis
+    # path depends on a backend being available. That is what keeps it headless.
+    import boamotion
+
+    package = Path(boamotion.__file__).parent
+    imports = ("import matplotlib.pyplot", "from matplotlib import pyplot")
+    offenders = [
+        path.name
+        for path in package.glob("*.py")
+        if any(line in path.read_text(encoding="utf-8") for line in imports)
+    ]
+    assert offenders == []

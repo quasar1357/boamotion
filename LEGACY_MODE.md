@@ -44,6 +44,7 @@ what makes the all-`+` expression in F2 print `511` instead of `52`.
 | F15 | [The duration column is labelled 10% whatever was used](#f15--the-duration-column-is-labelled-10-whatever-was-used) | moderate | `result.py` `original_headers` |
 | F16 | [A measurement that was never found is written as 0](#f16--a-measurement-that-was-never-found-is-written-as-0) | moderate | `result.py` `_write_overview` |
 | F17 | [The output file names mix conventions](#f17--the-output-file-names-mix-conventions) | cosmetic | `result.py` `file_names` |
+| F22 | [The speed comparison plot ends in a drop to zero](#f22--the-speed-comparison-plot-ends-in-a-drop-to-zero) | minor | `result.py` `comparison_curves` |
 
 ---
 
@@ -491,6 +492,37 @@ once results are moved around on a cluster.
 diff against FIJI output lines up file for file, and lower-case hyphenated ones under
 `<name>-results` otherwise. `test_no_output_name_contains_a_space_or_bracket` pins the
 corrected side.
+
+---
+
+## F22 — The speed comparison plot ends in a drop to zero
+
+`speedLinCompare`, lines 966-976.
+
+```javascript
+arrayLength=speedY.length-1;
+calculatedSpeedNorm=newArray(arrayLength);          // zero-filled
+measuredSpeedNorm=newArray(arrayLength);
+...
+for(j=0;j<calculatedSpeedNorm.length-1;j++){        // one short of the array
+    calculatedSpeedNorm[j]=(calculatedSpeed[j]-calculatedSpeedMin)/(calculatedSpeedMax-calculatedSpeedMin);
+    measuredSpeedNorm[j]=(speedY[j]-speedYMin)/(speedYMax-speedYMin);
+}
+```
+
+**What goes wrong.** The same shape as F1: an array is allocated and zero-filled, the loop
+that fills it stops one iteration short, and the leftover zero is then used. Here both
+normalised curves keep a final zero, so the plot ends with the two lines dropping straight
+to the axis.
+
+Only the figure is affected — `speedY` and the contraction trace are untouched, and no
+number in any text file comes from these arrays. But this is the figure the manual asks a
+user to inspect in order to judge whether the measurement is behaving linearly, so an
+artefact in it is worth knowing about.
+
+**What boamotion does.** `comparison_curves` scales both curves over their full range and
+truncates to the same length; when `legacy=True` it then zeroes the final point of each, as
+the original leaves it. `test_legacy_leaves_both_comparison_curves_at_zero` pins both sides.
 
 ---
 

@@ -121,8 +121,8 @@ the notebook with it or the repo is inconsistent at that commit.
 | | 10a `find_peaks` and `find_baselines` | done |
 | | 10b `measure_transients` — levels, flank crossings, per-beat table | done |
 | **D** | 11 `Result` object and the output files | done |
-| | 12 The three figures | **next** |
-| | 13 `Boa`, the user-facing class, and logging | |
+| | 12 The three figures | done |
+| | 13 `Boa`, the user-facing class, and logging | **next** |
 | **E** | 14 Validation against FIJI output | needs data |
 | | 15 Example notebook on the client's recording | needs data |
 | | — prototype complete — | |
@@ -132,7 +132,7 @@ the notebook with it or the repo is inconsistent at that commit.
 | | 19 SLURM array job | |
 | | 20 Performance work, if profiling justifies it | |
 
-Modules still to come: the figures in `result.py` (step 12), and `analysis.py` (13).
+Modules still to come: `analysis.py` (step 13).
 
 ## Check these first against real FIJI output
 
@@ -172,10 +172,11 @@ own columns: whether we **correct** it, and whether it is **written** yet.
 | F11 | `result.py` — the output column names | no | **step 11** |
 | F12 | `params.py` — superseded by `Params` and YAML, per D6 | no | step 4 |
 | F13 | `traces.py` — `_mean_change` averages the whole frame | no | step 9 |
-| F14 | `result.py` — `time_ms`, and the figures drawn on it | no | step 11 |
+| F14 | `result.py` — `time_ms`, and the figures drawn on it | no | steps 11 and 12 |
 | F15 | `result.py` — `original_headers` | yes | step 11 |
 | F16 | `result.py` — `_write_overview` | yes | step 11 |
-| F17 | `result.py` — `file_names` | yes | step 11 |
+| F17 | `result.py` — `file_names` | yes | steps 11 and 12 |
+| F22 | `result.py` — `comparison_curves` | yes | step 12 |
 | F18 | `traces.py` — the fixed `mean + std` threshold | no | step 8 |
 | F19 | `transients.py` — the fixed three-point test in `_crossing_before` | no | step 10b |
 | F20 | `traces.py` — `_frames_without_reference` | no | step 9 |
