@@ -136,6 +136,7 @@ the notebook with it or the repo is inconsistent at that commit.
 | | 18 Batch driver and CLI | |
 | | 19 SLURM array job | |
 | | 20 Performance work, if profiling justifies it | |
+| | 21 The original's other contraction-figure markers, per D15 | |
 
 Every module the prototype needs now exists. What remains is validation against real
 output, which is blocked on the client's data.

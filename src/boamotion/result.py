@@ -112,7 +112,11 @@ class Result:
         return np.arange(n) * self.params.sampling_interval_ms, measured, calculated
 
     def plot_contraction(self) -> Figure:
-        """The contraction trace, with each beat's peak and baseline marked."""
+        """The contraction trace, with each beat's peak and baseline marked.
+
+        The original also draws the crossings of every percentage level and the points a
+        baseline came from. Those are left out deliberately; see D15 in DECISIONS.md.
+        """
         figure, ax = _new_figure("Contraction (a.u.)")
         ax.plot(self.time_ms, self.contraction, color="black", lw=1.0)
         for peak, baseline in zip(

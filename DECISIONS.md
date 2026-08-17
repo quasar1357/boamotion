@@ -138,6 +138,30 @@ which turns drift into a CI failure rather than a silent inconsistency.
 package called `boamotion`. `Recording` was rejected because `FrameSequence` and
 `SyntheticRecording` already occupy that concept.
 
+### D15 — The contraction figure omits the original's transient markers, for now · *proposed*
+
+The original draws three kinds of overlay on the contraction plot: a vertical line from
+each baseline up to its peak, a line joining the two crossings of every percentage level,
+and a blue marker on the points a baseline came from. We draw the first, which carries the
+per-beat result, and leave the other two out of the prototype.
+
+They are diagnostic rather than quantitative — no number in any output file comes from
+them — and drawing them faithfully means keeping crossing positions and baseline positions
+that nothing else needs, so the measuring code would grow to serve the plotting code. The
+figures are also the one output that cannot be diff-checked against the original, so effort
+spent matching them exactly buys less confidence than effort spent on the numbers.
+
+**If we add them later:** the crossing positions should come from a helper shared with
+`measure_transients` rather than a second implementation, so the lines cannot disagree with
+the durations they illustrate. Note also that the original's baseline marker is drawn
+`baseline ± 10` in **data units** — a constant with no meaning at an arbitrary scale, and
+invisible at the ×255 of legacy mode. That one should be reproduced literally under
+`legacy=True` and sized to the axes under `legacy=False`.
+
+Note the lines are drawn between the two crossing *points*, whose values sit below the
+level by however far the trace overshot, so they are neither horizontal nor consistently
+sloped. Only their horizontal extent means anything.
+
 ---
 
 ## 2. Open questions for the client
