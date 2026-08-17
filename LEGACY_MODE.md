@@ -229,8 +229,9 @@ recording, where the trace is genuinely near baseline. If the reference frame nu
 happens to land on or near a peak, the threshold shifts by a large fraction of the
 amplitude and peaks are wrongly admitted or dropped.
 
-The compounding detail: the reference frame has been removed from the trace by this point,
-so the index does not even refer to the frame it names.
+The compounding detail: frame numbers count from 1 and trace positions from 0, and the
+reference frame has been removed from the trace by this point, so positions after it shift
+by one more. The index does not even refer to the frame it names.
 
 **What boamotion does.** `_zero_level` reproduces the indexing when `legacy=True` and
 takes the trace minimum otherwise. `test_the_legacy_zero_level_can_drop_a_genuine_beat`
@@ -291,6 +292,9 @@ used.
 
 **What boamotion does.** `_range_positions` appends the phantom zero when `legacy=True`
 and exactly one peak was found, so `_steepest_rise` reverses just as the original does.
+With `legacy=False` the peak keeps its own position as the gap, so the range around it is
+real, the flatness threshold is positive, and the beat gets an ordinary measured baseline —
+or, if no point qualifies as flat, the lowest value before the peak.
 `test_a_lone_peak_gets_a_zero_baseline_in_legacy_mode` asserts the resulting baseline is
 `0.0` and that the corrected mode returns a genuine resting value;
 `test_a_lone_peak_is_unaffected_in_the_high_frequency_mode` pins the other half.

@@ -206,7 +206,9 @@ be reproduced to match the original's numbers.
 
 **F5 — The peak threshold uses an arbitrary reference value.** The threshold is computed
 relative to `trace[reference_frame_number]`, indexing the contraction *trace* with a
-*frame number*. The intent is that the baseline is near zero, and since the trace usually
+*frame number*. The two do not line up: frame numbers count from 1 while trace positions
+count from 0, and the reference frame is left out of the trace, so everything after it
+shifts by one more. The intent is that the baseline is near zero, and since the trace usually
 is near zero early on the result is often acceptable. If the reference frame number
 happens to fall on or near a peak, however, the threshold shifts and peaks are wrongly
 admitted or dropped.

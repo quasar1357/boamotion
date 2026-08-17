@@ -82,9 +82,11 @@ Applied from the start so the cluster route stays open without doing cluster wor
 
 ## Open items
 
-- **Roman has not yet reviewed steps 11, 12 and 13 in depth** — `result.py`,
-  `analysis.py`, and the findings they turned up (F15 to F22). Worth walking through at
-  the start of the next session before anything new is built on them.
+- Steps 11 to 13 have been reviewed. Two questions they raised are settled: the original
+  really does write `Log_file.txt`, so only legacy mode capitalises, and passing both a
+  `Params` and loose settings keeps raising, since `boa.params.x = ...` already covers
+  adjusting one setting. Left to try in use: whether the split between `parameters.yaml`
+  (requested) and `Result.warnings` (effective) reads well.
 - Waiting on the client's example data (`A001.zip`, TIFF sequence, ~800 frames, 25 fps).
 - Waiting on the `demo/` folder with `demo_stack.tif` and reference outputs, if the client
   has it — it is *not* in the public GitHub repo.
@@ -123,9 +125,9 @@ the notebook with it or the repo is inconsistent at that commit.
 | | 9 `measure_contraction`, `measure_speed` | done |
 | | 10a `find_peaks` and `find_baselines` | done |
 | | 10b `measure_transients` — levels, flank crossings, per-beat table | done |
-| **D** | 11 `Result` object and the output files | done, **to review** |
-| | 12 The three figures | done, **to review** |
-| | 13 `Boa`, the user-facing class, and logging | done, **to review** |
+| **D** | 11 `Result` object and the output files | done |
+| | 12 The three figures | done |
+| | 13 `Boa`, the user-facing class, and logging | done |
 | **E** | 14 Validation against FIJI output | **next**, needs data |
 | | 15 Example notebook on the client's recording | needs data |
 | | — prototype complete — | |
