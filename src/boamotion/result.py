@@ -184,11 +184,11 @@ class Result:
 def original_headers(params: Params) -> dict[str, str]:
     """Map our column names onto the original's, in the order the macro writes them.
 
-    The macro hard-codes "10% above baseline" whatever the first percentage actually is,
-    so the header can disagree with the number beneath it.
+    The macro hard-codes "10% above baseline" whatever the flank level actually is, so
+    the header can disagree with the number beneath it.
     """
     # legacy: the header says 10% even when the level used is not 10%
-    first = 10 if params.legacy else params.percentages[0]
+    first = 10 if params.legacy else params.percentages[params.flank_level_index]
     headers = {}
     for column, template in ORIGINAL_HEADERS.items():
         if column == "_percentages_here":

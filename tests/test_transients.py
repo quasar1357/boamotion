@@ -351,7 +351,7 @@ def test_amplitude_is_measured_above_the_baseline_it_is_given():
     assert table["peak_amplitude"].tolist() == [100.0] * 4
 
 
-# --- the first percentage defines three other measures (F9) --------------------------
+# --- one percentage defines three other measures (F9) --------------------------------
 
 
 def test_the_first_percentage_defines_the_headline_measures():
@@ -367,6 +367,26 @@ def test_the_first_percentage_defines_the_headline_measures():
     assert at_50.loc[1, "contraction_duration_ms"] != at_10.loc[1, "contraction_duration_ms"]
     assert at_50.loc[1, "time_to_peak_ms"] != at_10.loc[1, "time_to_peak_ms"]
     assert at_50.loc[1, "relaxation_time_ms"] != at_10.loc[1, "relaxation_time_ms"]
+
+
+def test_the_flank_level_can_be_moved_off_the_first_percentage():
+    trace, peaks = beat_train()
+    first = measure_transients(trace, peaks, [10.0] * 4, percentages=(10, 50))
+    second = measure_transients(trace, peaks, [10.0] * 4, percentages=(10, 50), flank_level_index=1)
+
+    assert second.loc[1, "contraction_duration_ms"] == second.loc[1, "transient_50pct_ms"]
+    assert second.loc[1, "time_to_peak_ms"] < first.loc[1, "time_to_peak_ms"]
+
+    # Only the headline measures move; the per-level durations are unchanged.
+    for level in (10, 50):
+        column = f"transient_{level}pct_ms"
+        assert second[column].tolist() == first[column].tolist()
+
+
+def test_a_flank_level_outside_the_percentages_is_rejected():
+    trace, peaks = beat_train()
+    with pytest.raises(ValueError, match="flank_level_index"):
+        measure_transients(trace, peaks, [10.0] * 4, percentages=(10, 50), flank_level_index=2)
 
 
 def test_levels_that_do_not_ascend_are_rejected():

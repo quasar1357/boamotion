@@ -149,6 +149,7 @@ class Boa:
             baselines,
             framerate=params.framerate,
             percentages=params.percentages,
+            flank_level_index=params.flank_level_index,
         )
 
     def __repr__(self) -> str:

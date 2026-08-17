@@ -97,6 +97,8 @@ def test_non_mapping_yaml_is_rejected(tmp_path):
         ({"percentages": [0, 50]}, "1-99"),
         ({"percentages": [90, 10]}, "ascending"),
         ({"percentages": [10, 10]}, "ascending"),
+        ({"flank_level_index": 3}, "flank_level_index"),
+        ({"flank_level_index": -1}, "flank_level_index"),
         ({"baseline_threshold": -1}, "baseline_threshold"),
         ({"baseline_n_points": 0}, "baseline_n_points"),
     ],

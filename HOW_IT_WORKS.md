@@ -162,10 +162,12 @@ level on the way up and again on the way down, requiring **three consecutive poi
 beyond the level so that a single noisy sample cannot trigger a crossing. The time between
 the two crossings is the transient duration at that level.
 
-Two naming points. A level of `p` percent is reported as the `(100-p)`-to-`(100-p)`
+Two further points. A level of `p` percent is reported as the `(100-p)`-to-`(100-p)`
 transient, so the 10% level appears as "90-to-90" — the CD90 convention, measuring
-duration at 90% relaxation. And the **first** percentage in the list does double duty: its
-crossings also define time-to-peak, relaxation time and contraction duration.
+duration at 90% relaxation. And one level does double duty: its crossings also define
+time-to-peak, relaxation time and contraction duration, so contraction duration is by
+construction the same number as that level's transient. The original always uses the
+lowest level; `flank_level_index` chooses which, and defaults to it.
 
 ## What `legacy=True` reproduces
 

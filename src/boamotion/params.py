@@ -50,9 +50,11 @@ class Params:
         peak_threshold: Minimum peak height as a percentage of the full range
             [peakThreshold].
         percentages: Amplitude levels, in percent above baseline, at which transient
-            durations are measured [percentages]. Must be ascending; the *first*
-            entry also defines time-to-peak, relaxation time and contraction
-            duration.
+            durations are measured [percentages]. Must be ascending.
+        flank_level_index: Which of those levels defines the flanks, as an index into
+            `percentages`. Its two crossings give time-to-peak, relaxation time and
+            contraction duration. The original always uses the first, which is the
+            default here.
         baseline_threshold: Flatness tolerance for baseline detection, in percent
             [baselineThreshold].
         baseline_n_points: Frames averaged to give the baseline [baselineNumberOfPoints].
@@ -86,6 +88,7 @@ class Params:
     peak_window: int = 20
     peak_threshold: float = 30.0
     percentages: tuple[int, ...] = DEFAULT_PERCENTAGES
+    flank_level_index: int = 0
     baseline_threshold: float = 2.0
     baseline_n_points: int = 5
     high_freq_baseline: bool = True
@@ -158,6 +161,11 @@ class Params:
         if list(self.percentages) != sorted(set(self.percentages)):
             raise ValueError(
                 f"percentages must be ascending and free of duplicates, got {self.percentages}"
+            )
+        if not 0 <= self.flank_level_index < len(self.percentages):
+            raise ValueError(
+                f"flank_level_index must select one of the {len(self.percentages)} "
+                f"percentages, got {self.flank_level_index}"
             )
         if not 0 <= self.baseline_threshold <= 100:
             raise ValueError(

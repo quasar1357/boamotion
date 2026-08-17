@@ -116,6 +116,7 @@ def measure_transients(
     *,
     framerate: float = 100.0,
     percentages: tuple[int, ...] = (10, 50, 90),
+    flank_level_index: int = 0,
 ) -> pd.DataFrame:
     """Measure every beat: its amplitude, and how long it takes on each flank.
 
@@ -124,8 +125,9 @@ def measure_transients(
     beyond it so that one noisy sample cannot trigger a crossing. The time between the
     two is the transient duration at that level.
 
-    The **first** level does double duty: its two crossings also define time-to-peak,
-    relaxation time and contraction duration. That is why the levels must ascend.
+    One level does double duty: its two crossings also define time-to-peak, relaxation
+    time and contraction duration. The original always uses the lowest level, so
+    `flank_level_index` defaults to the first.
 
     Args:
         trace: The contraction trace.
@@ -133,6 +135,8 @@ def measure_transients(
         baselines: One resting level per peak, as returned by `find_baselines`.
         framerate: Frames per second, which turns positions into milliseconds.
         percentages: Amplitude levels to measure at, ascending.
+        flank_level_index: Which of those levels defines the flanks, as an index into
+            `percentages`.
 
     Returns:
         One row per beat, indexed by beat number counting from 1.
@@ -145,6 +149,11 @@ def measure_transients(
     peaks = np.asarray(peaks, dtype=int)
     baselines = np.asarray(baselines, dtype=np.float64)
     percentages = _checked_percentages(percentages)
+    if not 0 <= flank_level_index < len(percentages):
+        raise ValueError(
+            f"flank_level_index must select one of the {len(percentages)} percentages, "
+            f"got {flank_level_index}"
+        )
     if len(peaks) != len(baselines):
         raise ValueError(
             f"got {len(peaks)} peak(s) but {len(baselines)} baseline(s); they must match"
@@ -174,8 +183,10 @@ def measure_transients(
             )
             for level in levels
         ]
-        _report_missing(crossings[0], beat)
-        rows.append(_beat_row(trace, peaks, baselines, beat, percentages, crossings, interval))
+        _report_missing(crossings[flank_level_index], beat)
+        rows.append(
+            _beat_row(trace, peaks, baselines, beat, crossings, flank_level_index, interval)
+        )
 
     table = pd.DataFrame(rows, columns=_columns(percentages))
     table.index = pd.RangeIndex(1, len(table) + 1, name="beat")
@@ -189,7 +200,7 @@ def measure_transients(
 
 
 def _checked_percentages(percentages) -> tuple[int, ...]:
-    """The levels have to ascend, because the first one defines three other measures."""
+    """Ascending order is required, as the original writes its columns lowest first."""
     levels = tuple(percentages)
     if not levels:
         raise ValueError("percentages must contain at least one level")
@@ -256,12 +267,14 @@ def _beat_row(
     peaks: np.ndarray,
     baselines: np.ndarray,
     beat: int,
-    percentages: tuple[int, ...],
     crossings: list[tuple[int | None, int | None]],
+    flank_level_index: int,
     interval: float,
 ) -> list[float]:
     peak = int(peaks[beat])
-    down, up = crossings[0]
+    # One level defines the flanks: time-to-peak, relaxation time and contraction
+    # duration all come from its two crossings, which is why it also gates them below.
+    down, up = crossings[flank_level_index]
     duration = abs(up - down) * interval if down is not None and up is not None else np.nan
 
     return [
