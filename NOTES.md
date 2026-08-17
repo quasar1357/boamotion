@@ -23,7 +23,7 @@ All under `../` (the folder containing this repo):
 | `sala-et-al-2017-musclemotion.pdf` | The paper. Figure S4 covers reference-frame detection. |
 | `AChanda_MuscleMotion_version_python.py` | Earlier partial Python attempt; cross-check only. |
 | `MuscleMotion_GUI-with-params.png` | Client's last-used transient-analysis settings. |
-| `Emails.txt` | Client correspondence and agreed prototype scope. |
+| `MuscleMotion_Emails.txt` | Client correspondence and agreed prototype scope. |
 
 The two `.ijm` versions differ only in 38 lines where array lengths are hoisted into a
 temporary before `newArray(...)`. No behavioural difference.
@@ -82,17 +82,18 @@ Applied from the start so the cluster route stays open without doing cluster wor
 
 ## Open items
 
-- Steps 11 to 13 have been reviewed. Two questions they raised are settled: the original
-  really does write `Log_file.txt`, so only legacy mode capitalises, and passing both a
-  `Params` and loose settings keeps raising, since `boa.params.x = ...` already covers
-  adjusting one setting. Left to try in use: whether the split between `parameters.yaml`
-  (requested) and `Result.warnings` (effective) reads well.
 - Waiting on the client's example data (`A001.zip`, TIFF sequence, ~800 frames, 25 fps).
+  It was shared as a SharePoint link we have no rights to; access was requested through
+  SharePoint, and the client was asked to approve it on 21 August 2026. This is the only
+  real blocker — with the recording in hand we can run the FIJI plugin ourselves and diff
+  against that, so the client's own results folder is useful but not required.
 - Waiting on the `demo/` folder with `demo_stack.tif` and reference outputs, if the client
-  has it — it is *not* in the public GitHub repo.
-- The client's dialog-1 answers (frame rate aside) are unknown; the screenshot only shows
-  the third dialog. Assuming defaults: no Gaussian blur, noise reduction on, automatic
-  reference frame.
+  has it — it is *not* in the public GitHub repo. It would validate against the authors'
+  own reference numbers rather than a run of our own.
+- The client's dialog-1 answers are unknown, but they do not decide the diff: both sides
+  can simply be run with the same settings. What was asked instead is whether Gaussian
+  blur or cropping are part of their routine, since those two alone are unimplemented
+  (step 17) — noise reduction and a manually chosen reference frame are already settings.
 
 ## Frame ordering in image sequences
 

@@ -65,9 +65,14 @@ would be a local-only optional extra).
 ### D6 — Parameters: one object, settable directly or loaded from a file · *proposed*
 
 A single parameter object carries every setting with the original's defaults. It can be
-constructed with keyword arguments, modified attribute by attribute, or loaded from and
-saved to a YAML file. Every analysis writes its effective parameters next to the results,
-so any output can be reproduced exactly.
+constructed with keyword arguments, modified attribute by attribute or several at a time
+with `set_params()`, and loaded from and saved to a YAML file. Every analysis writes the
+parameters it was given next to the results, so any output can be reproduced exactly.
+
+Settings may be passed as loose keyword arguments *or* as a ready-made parameter object,
+but not both at once: that combination is almost always a leftover argument rather than an
+intent, and silently letting one win could corrupt every timing result. `set_params()`
+covers adjusting an object you already hold.
 
 **Trade-off:** this replaces the macro's behaviour of remembering the last-used settings
 in ImageJ's global preferences, which makes an analysis hard to reproduce months later and
@@ -102,6 +107,13 @@ would be premature optimisation.
 
 We reproduce the original's seven output files and their names, so results can be diffed
 directly against FIJI output, and additionally write a tidy CSV and the parameter dump.
+
+Some settings cannot survive contact with a recording: a search range longer than the
+recording is shortened, an odd peak window is rounded up. The parameter dump therefore
+records what was **requested**, unchanged, while every adjustment the run had to make is
+reported as a warning — collected in `run-summary.txt` and in the log. Writing a second,
+"effective" parameter file was rejected because it would mean restating each stage's
+clamping rules in a second place, where they could drift apart.
 
 ### D11 — Frame numbers are 1-based · *proposed*
 
