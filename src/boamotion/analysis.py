@@ -46,7 +46,8 @@ class Boa:
         if params is not None and settings:
             raise ValueError(
                 "pass either a Params object or individual settings, not both; "
-                f"got params and {sorted(settings)}"
+                f"got params and {sorted(settings)}. To start from a Params and adjust "
+                "it, set the attribute afterwards: boa.params.framerate = ..."
             )
         self.source = source
         self.params = params if params is not None else Params(**settings)
