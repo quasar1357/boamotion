@@ -60,6 +60,21 @@ def test_settings_can_be_changed_between_runs():
     assert analyser.run().n_beats == 3
 
 
+def test_set_params_changes_several_settings_and_chains():
+    analyser, rec = boa()
+    assert analyser.set_params(peak_window=18, legacy=False).run().n_beats == 3
+    assert analyser.params.peak_window == 18
+    assert analyser.params.legacy is False
+    assert analyser.params.framerate == rec.framerate  # the rest is untouched
+
+
+def test_set_params_rejects_a_name_that_is_not_a_setting():
+    analyser, _ = boa()
+    with pytest.raises(ValueError, match="unknown setting"):
+        analyser.set_params(frame_rate=25.0)
+    assert not hasattr(analyser.params, "frame_rate")
+
+
 def test_params_and_loose_settings_together_are_rejected():
     with pytest.raises(ValueError, match="not both"):
         Boa(recording().frames, params=Params(), framerate=25.0)

@@ -100,6 +100,21 @@ class Params:
         self.percentages = tuple(self.percentages)
         self.validate()
 
+    def update(self, **settings) -> Params:
+        """Change several settings at once, and return self so calls can be chained.
+
+        Unknown names are rejected rather than quietly added, which a plain attribute
+        assignment cannot do.
+        """
+        unknown = sorted(set(settings) - {field.name for field in fields(self)})
+        if unknown:
+            raise ValueError(f"unknown setting(s) {unknown}; see Params for what exists")
+        for name, value in settings.items():
+            setattr(self, name, value)
+        self.percentages = tuple(self.percentages)
+        self.validate()
+        return self
+
     @property
     def sampling_interval_ms(self) -> float:
         """Time between consecutive frames, in milliseconds."""

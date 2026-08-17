@@ -30,7 +30,7 @@ class Boa:
     >>> result.save("results")
 
     Settings can be given as keyword arguments, or as a ready-made `Params`, and can be
-    changed on `boa.params` at any time before `run()`.
+    changed with `set_params()` at any time before `run()`.
 
     Args:
         source: A directory of TIFF frames, or anything indexable that yields 2-D frames,
@@ -47,12 +47,24 @@ class Boa:
             raise ValueError(
                 "pass either a Params object or individual settings, not both; "
                 f"got params and {sorted(settings)}. To start from a Params and adjust "
-                "it, set the attribute afterwards: boa.params.framerate = ..."
+                "it, call set_params() afterwards"
             )
         self.source = source
         self.params = params if params is not None else Params(**settings)
         self.name = name or _name_of(source)
         self.result: Result | None = None
+
+    def set_params(self, **settings) -> Boa:
+        """Change several settings at once, and return self so calls can be chained.
+
+        >>> boa = Boa("recordings/A001")
+        >>> boa.set_params(framerate=25, peak_window=16, legacy=False)
+
+        The settings are validated straight away, so a wrong name or value is caught
+        here rather than part-way through a run.
+        """
+        self.params.update(**settings)
+        return self
 
     def run(self) -> Result:
         """Run every stage and return the results, which are also kept on `.result`.

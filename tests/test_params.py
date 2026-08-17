@@ -41,6 +41,17 @@ def test_sampling_interval():
     assert Params(framerate=100).sampling_interval_ms == 10.0
 
 
+def test_update_sets_several_at_once_and_validates():
+    params = Params()
+    assert params.update(framerate=25, percentages=[10, 90]) is params
+    assert params.framerate == 25
+    assert params.percentages == (10, 90)
+    with pytest.raises(ValueError, match="ascending"):
+        params.update(percentages=[90, 10])
+    with pytest.raises(ValueError, match="unknown setting"):
+        params.update(frame_rate=25)
+
+
 def test_percentages_accept_any_sequence():
     assert Params(percentages=[10, 90]).percentages == (10, 90)
 
