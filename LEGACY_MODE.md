@@ -98,10 +98,19 @@ Worth stressing that the *method* is sound; only this implementation of it is no
 usually still returns something reasonable, because a recording with a decent rest phase
 holds many near-identical quiet frames, which is very likely why it went unnoticed.
 
+One detail decides which candidate wins when frames are perfectly still. Two motionless
+frames give `0/0`, which is `NaN`, and `Array.rankPositions` sorts `NaN` last — so the
+leftover zero at (b) still ranks first and the mechanism above holds unchanged. Reading
+`0/0` as "exactly on the unity line" instead, which is what it means, makes the genuine
+zeros tie with the leftover one and hands the win to a different frame. Validating against
+FIJI on a synthetic recording is what surfaced this: the macro chose frame 54 and we chose
+frame 1.
+
 **What boamotion does.** `reference.py` has both. `_select_legacy` is transcribed loop for
 loop, zero-fill and all, so the mechanism stays visible rather than being asserted in a
 comment. `_select` is the method as documented: shortlist by distance from the origin,
-then by distance from the unity line, then score.
+then by distance from the unity line, then score. `_unity_distance` keeps `0/0` as `NaN`
+for the legacy path and reads it as zero for the corrected one.
 
 `test_reference.py` pins the mechanism rather than a number:
 `test_legacy_selection_is_decided_by_the_radius_ranking_alone` sweeps `n_low_values` and
@@ -547,3 +556,4 @@ to say with synthetic recordings rather than real ones.
 
 **Gaussian blur** is not implemented (deferred, see `DECISIONS.md` section 4). It appears
 in most of the excerpts above and is skipped when reading them.
+

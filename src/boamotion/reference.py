@@ -118,11 +118,17 @@ def _motion_trace(frames, speed_window: int, count: int) -> np.ndarray:
     return values
 
 
-def _unity_distance(motion: np.ndarray, shifted: np.ndarray) -> np.ndarray:
-    """How far each pair sits from the unity line, where consecutive motion is equal."""
+def _unity_distance(motion: np.ndarray, shifted: np.ndarray, legacy: bool) -> np.ndarray:
+    """How far each pair sits from the unity line, where consecutive motion is equal.
+
+    Two perfectly still frames give 0/0, which is exactly on the unity line and so
+    scores 0. ImageJ instead leaves it NaN and sorts NaN last, which changes which
+    candidate wins, so `legacy` keeps the NaN.
+    """
     with np.errstate(divide="ignore", invalid="ignore"):
         distance = np.abs(motion / shifted - 1.0)
-    # 0/0 means both frames were perfectly still, which is exactly on the unity line.
+    if legacy:
+        return distance
     return np.nan_to_num(distance, nan=0.0, posinf=np.inf, neginf=np.inf)
 
 
@@ -135,7 +141,7 @@ def _select(window: np.ndarray, n_low_values: int, n_unity_values: int) -> int:
     quietest = np.argsort(radius, kind="stable")[:n_low_values]  # Pick best n
 
     # How far are they from the unity line, i.e. how stable
-    unity = _unity_distance(motion[quietest], shifted[quietest])
+    unity = _unity_distance(motion[quietest], shifted[quietest], legacy=False)
     steadiest = np.argsort(unity, kind="stable")[:n_unity_values]  # Pick best n
 
     # Positions within quietest, so the unity values above stay usable
@@ -150,7 +156,8 @@ def _select_legacy(window: np.ndarray, n_low_values: int, n_unity_values: int) -
     """The original, transcribed loop for loop so its behaviour is visible.
 
     Both loops stop one iteration short of their array, which is what makes the
-    stability test inert: the unfilled last entry stays 0 and always wins.
+    stability test inert: the unfilled last entry stays 0 and always wins. It wins even
+    against a genuinely motionless pair, whose 0/0 is NaN and sorts last.
     """
     motion, shifted = window[:-1], window[1:]
     radius = np.hypot(motion, shifted)
@@ -159,7 +166,7 @@ def _select_legacy(window: np.ndarray, n_low_values: int, n_unity_values: int) -
     unity = np.zeros(n_low_values)
     for d in range(n_low_values - 1):
         index = quietest[d]
-        unity[d] = _unity_distance(motion[index], shifted[index])
+        unity[d] = _unity_distance(motion[index], shifted[index], legacy=True)
 
     ranked = np.argsort(unity, kind="stable")
     best_index, best_score = None, None

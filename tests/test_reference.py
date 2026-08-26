@@ -8,6 +8,9 @@ from boamotion.reference import _motion_trace, _select_legacy
 # stable quiet point; pair (0.1, 0.2) is quieter still but changing fast.
 MOTION = [9.0, 0.1, 0.2, 5.0, 0.3, 0.31, 5.0, 5.0]
 
+# The same, but with frames that do not move at all, so their unity distance is 0/0.
+STILL_MOTION = [9.0, 0.0, 0.0, 0.0, 0.0, 7.0, 6.0, 5.0]
+
 
 def constant_frames(motion):
     """Uniform frames whose brightness steps by the given amounts.
@@ -34,6 +37,18 @@ def test_legacy_picks_a_point_that_is_not_quiet_at_all():
     # The unfilled entry of the unity array wins, so selection falls back to the
     # n_low_values-th quietest point - here one with 20x the motion of the answer.
     assert detect(constant_frames(MOTION), n_low_values=3, n_unity_values=2, legacy=True) == 2
+
+
+def test_legacy_lets_the_unfilled_entry_beat_a_motionless_pair():
+    # A pair that does not move gives 0/0, which ImageJ leaves NaN and ranks last, so
+    # the unfilled entry still wins and the answer is the n_low_values-th quietest.
+    frames = constant_frames(STILL_MOTION)
+    assert detect(frames, n_low_values=3, n_unity_values=2, legacy=True) == 3
+
+
+def test_corrected_treats_a_motionless_pair_as_exactly_on_the_unity_line():
+    frames = constant_frames(STILL_MOTION)
+    assert detect(frames, n_low_values=3, n_unity_values=2, legacy=False) == 2
 
 
 def test_corrected_result_does_not_depend_on_where_the_search_starts():
