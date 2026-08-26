@@ -16,7 +16,7 @@ from boamotion import (
     measure_transients,
     synthetic_recording,
 )
-from boamotion.result import original_headers
+from boamotion.result import _imagej_number, original_headers
 
 
 def analysed(**overrides) -> Result:
@@ -112,10 +112,10 @@ def test_the_headers_are_in_the_order_the_macro_writes_them():
         "relaxation_time_ms",
         "transient_10pct_ms",
         "transient_50pct_ms",
-        "peak_to_peak_ms",
         "baseline",
         "peak_amplitude",
         "contraction_amplitude",
+        "peak_to_peak_ms",
     ]
 
 
@@ -183,9 +183,44 @@ def test_the_speed_file_is_shorter_than_the_contraction_file(tmp_path):
     assert len(speed) < len(contraction)
 
 
-def test_the_overview_uses_the_original_headers_and_numbers_rows_from_one(tmp_path):
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (0.0, "0"),
+        (40.0, "40"),
+        (-3.0, "-3"),
+        (0.5, "0.5000"),
+        (10797.70614, "10797.7061"),
+        (190330.95312, "190330.953"),
+        (37645371.109, "37645371.1"),
+    ],
+)
+def test_numbers_are_written_the_way_the_macro_prints_them(value, expected):
+    # Whole numbers bare, the rest to four decimals, the whole thing capped at 9 digits.
+    assert _imagej_number(value, 4, 9) == expected
+
+
+def test_the_legacy_traces_hold_no_more_than_four_decimals(tmp_path):
+    _, target = written(tmp_path)
+    lines = (target / "contraction.txt").read_text(encoding="utf-8").splitlines()
+    decimals = [len(cell.partition(".")[2]) for line in lines for cell in line.split("\t")]
+    assert max(decimals) <= 4
+
+
+def test_the_legacy_overview_has_no_header_and_no_row_numbers(tmp_path):
+    # The macro's Input/Output call clears both save options, so the file is bare data.
     result, target = written(tmp_path)
     lines = (target / "Overview-results.txt").read_text(encoding="utf-8").splitlines()
+
+    assert len(lines) == result.n_beats
+    cells = lines[0].split("\t")
+    assert len(cells) == len(original_headers(result.params))
+    assert all(_is_number(cell) for cell in cells)
+
+
+def test_the_corrected_overview_keeps_its_header_and_numbers_rows_from_one(tmp_path):
+    result, target = written(tmp_path, legacy=False)
+    lines = (target / "overview-results.txt").read_text(encoding="utf-8").splitlines()
 
     header = lines[0].split("\t")
     assert header[0] == " "
@@ -196,10 +231,17 @@ def test_the_overview_uses_the_original_headers_and_numbers_rows_from_one(tmp_pa
 
 
 def test_our_own_columns_stay_out_of_the_original_file(tmp_path):
-    _, target = written(tmp_path)
-    header = (target / "Overview-results.txt").read_text(encoding="utf-8").splitlines()[0]
-    assert "peak_position" not in header
-    assert "peak_time_ms" not in header
+    result, target = written(tmp_path)
+    first = (target / "Overview-results.txt").read_text(encoding="utf-8").splitlines()[0]
+    assert len(first.split("\t")) == len(original_headers(result.params))
+
+
+def _is_number(cell: str) -> bool:
+    try:
+        float(cell)
+    except ValueError:
+        return False
+    return True
 
 
 def test_the_tidy_csv_keeps_our_own_names(tmp_path):

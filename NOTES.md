@@ -129,8 +129,9 @@ the notebook with it or the repo is inconsistent at that commit.
 | **D** | 11 `Result` object and the output files | done |
 | | 12 The three figures | done |
 | | 13 `Boa`, the user-facing class, and logging | done |
-| **E** | 14 Validation against FIJI output | **next**, needs data |
+| **E** | 14 Validation against FIJI output | synthetic done, real data pending |
 | | 15 Example notebook on the client's recording | needs data |
+| | 14b Diff tool: parse both output folders, compare numerically | **next** |
 | | — prototype complete — | |
 | **F** | 16 Other input formats: TIFF stacks, PNG, AVI | |
 | | 17 Gaussian blur, ROI, interactive reference picking | |
@@ -142,22 +143,35 @@ the notebook with it or the repo is inconsistent at that commit.
 Every module the prototype needs now exists. What remains is validation against real
 output, which is blocked on the client's data.
 
-## Check these first against real FIJI output
+## What the first FIJI comparison established
 
-Step 14 has no data yet, and parts of the output format are inferred rather than
-observed. These are the places a diff would fail first, in the order worth checking:
+On 26 August 2026 the macro was run in FIJI on `synthetic_blobs_dataset/` with the
+defaults, 25 fps and `PeakDetectionWindow=16`, and the output kept in
+`../synthetic_blobs_dataset-results/26-08-26_Fiji_default/`. Running `boamotion` with
+`legacy=True` on the same folder now agrees:
 
-1. **The percentage column names.** We write `<100-p>-to-<100-p> transient (ms)`, which
-   assumes the macro language binds `-` tighter than `+`. Any other precedence makes that
-   expression a type error, and the CD90 convention says the result should be `90-to-90`,
-   so this is the only reading that works — but it is inference, not observation.
-2. **The `Overview-results.txt` layout.** We write a row-number column headed with a single
-   space, rows numbered from 1, tab separated. That is what ImageJ's *Save As Results* is
-   understood to produce; the exact header cell and number formatting are unverified.
-3. **Missing measurements as `0`** (F16). We assume `setResult` with `false` stores the
-   number zero.
-4. **Number formatting** in all three text files — decimal places, and whether ImageJ
-   writes integers without a decimal point.
+- **Reference frame 54, peaks at frames 15, 40, 64, 89, four beats** — identical, and the
+  `autoDetectStop` clamp to 97 matches too.
+- **`Overview-results.txt` is byte-identical**, all four beats and all ten columns.
+- **The traces agree to 4e-8 relative**, which is float32 accumulation order. That is the
+  floor; text comparison of the trace files is not meaningful, so a diff has to parse them
+  and compare with a tolerance (F26).
+
+Three of the four things this section previously listed as inferred are now observed. The
+layout of `Overview-results.txt` is settled by F23 and F24 — no header row, no row-number
+column, peak-to-peak time last. Missing measurements really are written as `0` (F16), on
+the fourth beat, whose falling crossing the macro also failed to find. Number formatting is
+settled by F26.
+
+What is still unobserved:
+
+1. **The percentage column names.** `<100-p>-to-<100-p> transient (ms)` remains inference,
+   and this run could not test it: the macro never writes headers, so the string exists
+   only in the Results window. It matters only for `legacy=False`, which writes headers of
+   its own.
+2. **A recording that is not synthetic.** Every beat here is identical and the baseline is
+   exactly 0, so the baseline logic (F6, F7) and anything that depends on noise was not
+   really exercised. The client's A001 is still the test that counts.
 
 ## Where each finding lives
 
@@ -185,6 +199,10 @@ own columns: whether we **correct** it, and whether it is **written** yet.
 | F16 | `result.py` — `_write_overview` | yes | step 11 |
 | F17 | `result.py` — `file_names` | yes | steps 11 and 12 |
 | F22 | `result.py` — `comparison_curves` | yes | step 12 |
+| F23 | `result.py` — `_write_overview` | yes | step 14 |
+| F26 | `result.py` — `_imagej_number` | yes | step 14 |
+| F24 | `result.py` — `ORIGINAL_HEADERS` | no | step 14 |
+| F25 | no code; the macro couples drawing to measuring, we do not | no | — |
 | F18 | `traces.py` — the fixed `mean + std` threshold | no | step 8 |
 | F19 | `transients.py` — the fixed three-point test in `_crossing_before` | no | step 10b |
 | F20 | `traces.py` — `_frames_without_reference` | no | step 9 |

@@ -26,16 +26,18 @@ from boamotion.params import Params
 
 logger = logging.getLogger(__name__)
 
-# The original's Results table, in the order the macro fills the columns.
+# The original's Results table, in the order the macro fills the columns. A column is
+# created when it is first written, and peak-to-peak time is skipped for the first beat
+# because it has no predecessor, so it is created last, after the amplitudes.
 ORIGINAL_HEADERS = {
     "contraction_duration_ms": "Contraction duration [{first}% above baseline] (ms)",
     "time_to_peak_ms": "Time-to-peak (ms)",
     "relaxation_time_ms": "Relaxation Time (ms)",
     "_percentages_here": None,
-    "peak_to_peak_ms": "Peak-to-peak time (ms)",
     "baseline": "Baseline value (a.u.)",
     "peak_amplitude": "Peak amplitude (a.u.)",
     "contraction_amplitude": "Contraction amplitude (a.u.)",
+    "peak_to_peak_ms": "Peak-to-peak time (ms)",
 }
 
 
@@ -153,12 +155,14 @@ class Result:
         as the original does.
         """
         # legacy: the original's own file and folder names, mixed case and all
-        names = file_names(self.params.legacy)
+        legacy = self.params.legacy
+        names = file_names(legacy)
         target = _new_directory(Path(directory), self.name, names["folder"])
         target.mkdir(parents=True)
 
-        _write_trace(target / names["contraction"], self.time_ms, self.contraction)
-        _write_trace(target / names["speed"], self.speed_time_ms, self.speed)
+        # legacy: the original's four-decimal rendering of every number
+        _write_trace(target / names["contraction"], self.time_ms, self.contraction, legacy)
+        _write_trace(target / names["speed"], self.speed_time_ms, self.speed, legacy)
         _write_overview(target / names["overview"], self.beats, self.params)
 
         for key, figure in (
@@ -248,13 +252,41 @@ def _new_directory(parent: Path, name: str, suffix: str) -> Path:
     return parent / f"{base.name}-{version}"
 
 
+def _imagej_number(value: float, decimals: int, significant: int = 0) -> str:
+    """A number as the original writes it: whole ones bare, the rest to `decimals`.
+
+    ImageJ also caps how many digits it prints, so a large value drops decimal places
+    rather than growing wider. `significant` applies that cap; 0 leaves it off.
+    """
+    if float(value).is_integer() and abs(value) < 1e9:
+        return str(int(value))
+    if significant:
+        decimals = max(0, min(decimals, significant - len(str(abs(int(value))))))
+    return f"{value:.{decimals}f}"
+
+
 def _write_lines(path: Path, lines) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def _write_trace(path: Path, times: np.ndarray, values: np.ndarray) -> None:
-    """Two tab-separated columns, no header, as the original writes them."""
-    lines = (f"{time}\t{value}" for time, value in zip(times, values, strict=True))
+def _write_trace(path: Path, times: np.ndarray, values: np.ndarray, legacy: bool) -> None:
+    """Two tab-separated columns, no header, as the original writes them.
+
+    The original builds each line by string concatenation, which the macro language
+    renders to four decimal places. Corrected, every value is written in full, since
+    rounding a trace on the way out only loses precision.
+    """
+    if legacy:
+        pairs = (
+            (_imagej_number(time, 4, 9), _imagej_number(value, 4, 9))
+            for time, value in zip(times, values, strict=True)
+        )
+    else:
+        pairs = (
+            (repr(float(time)), repr(float(value)))
+            for time, value in zip(times, values, strict=True)
+        )
+    lines = (f"{time}\t{value}" for time, value in pairs)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -267,6 +299,19 @@ def _write_overview(path: Path, beats: pd.DataFrame, params: Params) -> None:
     # value; corrected, it is left empty so a reader can tell the two apart.
     if params.legacy:
         table = table.fillna(0)
+
+    # legacy: the macro's run("Input/Output...", "jpeg=100") clears every checkbox it
+    # does not name, including the two that save column headers and row numbers.
+    if params.legacy:
+        table.to_csv(
+            path,
+            sep="\t",
+            header=False,
+            index=False,
+            lineterminator="\n",
+            float_format=lambda value: _imagej_number(value, 3),
+        )
+        return
 
     table.index = pd.RangeIndex(1, len(table) + 1)
     table.to_csv(path, sep="\t", index_label=" ", lineterminator="\n")

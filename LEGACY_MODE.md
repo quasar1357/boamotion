@@ -45,6 +45,10 @@ what makes the all-`+` expression in F2 print `511` instead of `52`.
 | F16 | [A measurement that was never found is written as 0](#f16--a-measurement-that-was-never-found-is-written-as-0) | moderate | `result.py` `_write_overview` |
 | F17 | [The output file names mix conventions](#f17--the-output-file-names-mix-conventions) | cosmetic | `result.py` `file_names` |
 | F22 | [The speed comparison plot ends in a drop to zero](#f22--the-speed-comparison-plot-ends-in-a-drop-to-zero) | minor | `result.py` `comparison_curves` |
+| F23 | [The results table is saved without headers or row numbers](#f23--the-results-table-is-saved-without-headers-or-row-numbers) | moderate | `result.py` `_write_overview` |
+| F24 | [Peak-to-peak time ends up in the last column](#f24--peak-to-peak-time-ends-up-in-the-last-column) | minor | `result.py` `ORIGINAL_HEADERS` |
+| F25 | [Four result columns are gated by a drawing option](#f25--four-result-columns-are-gated-by-a-drawing-option) | minor | not reproduced |
+| F26 | [Numbers are written with ImageJ's own formatting](#f26--numbers-are-written-with-imagejs-own-formatting) | cosmetic | `result.py` `_imagej_number` |
 
 ---
 
@@ -557,3 +561,97 @@ to say with synthetic recordings rather than real ones.
 **Gaussian blur** is not implemented (deferred, see `DECISIONS.md` section 4). It appears
 in most of the excerpts above and is skipped when reading them.
 
+## F23 — The results table is saved without headers or row numbers
+
+Macro start, line 8, and the save at line 553.
+
+```javascript
+run("Input/Output...", "jpeg=100");
+...
+saveAs("Results", resultFile);
+```
+
+**What happens.** An ImageJ `run(...)` options string clears every checkbox it does not
+name. That one call sets the JPEG quality and, as a side effect, switches off *Save column
+headers* and *Save row numbers*. `Overview-results.txt` is therefore bare numbers: one line
+per beat, ten tab-separated columns, nothing saying what any of them is.
+
+Two consequences follow. A reader of the file has to know the column order to make sense of
+it, and F15 never reaches disk at all — the mislabelled header exists only in the Results
+window on screen.
+
+**What boamotion does.** `_write_overview` writes the file bare when `legacy=True`, which
+makes it byte-identical to the macro's. With `legacy=False` the headers and row numbers come
+back, since a results file nobody can read is a poor default.
+
+## F24 — Peak-to-peak time ends up in the last column
+
+`transientAnalysis`, lines 1262-1270.
+
+```javascript
+for(k=0;k<maxCount;k++){
+    ...
+    if(k>0){
+        setResult("Peak-to-peak time (ms)", k, (maxList[k]-maxList[k-1])*samplingTime);
+    }
+    setResult("Baseline value (a.u.)", k, minValueList[k]);
+    setResult("Peak amplitude (a.u.)", k, yValues[maxList[k]]);
+    setResult("Contraction amplitude (a.u.)", k, yValues[maxList[k]]-minValueList[k]);
+}
+```
+
+**What happens.** An ImageJ Results column is created the first time something is written to
+it, and the columns keep that creation order. Peak-to-peak time is written first in the loop
+body but skipped for `k=0`, because the first beat has no predecessor. So the three amplitude
+columns are created first, and peak-to-peak time is appended after them — the opposite of the
+order the code reads in.
+
+Combined with F23 this is worth knowing: the file has no headers, so the order *is* the only
+description of the data.
+
+**What boamotion does.** `ORIGINAL_HEADERS` lists peak-to-peak time last, in both modes. The
+order carries no meaning beyond matching the original.
+
+## F25 — Four result columns are gated by a drawing option
+
+`transientAnalysis`, line 1261.
+
+```javascript
+if(drawPeaks==true){
+    for(k=0;k<maxCount;k++){
+        Plot.drawLine(...);
+        ...
+        setResult("Baseline value (a.u.)", k, minValueList[k]);
+```
+
+**What happens.** `drawPeaks` decides whether the peak markers are drawn on the contraction
+figure, but the same block also fills the baseline, peak amplitude, contraction amplitude and
+peak-to-peak columns. Turning off a plot annotation therefore removes four measurements from
+the results table. It is hard-wired to `true` and no dialog exposes it, so nobody meets this
+in practice.
+
+**What boamotion does.** Nothing to reproduce: the measurements are computed and written
+regardless of what is drawn, and the figure is a separate concern from the table.
+
+## F26 — Numbers are written with ImageJ's own formatting
+
+`writeFile`, line 837, against the results table save at line 553.
+
+```javascript
+print(f, xvalues[i]+"	"+yvalues[i]);
+```
+
+**What happens.** The trace files are built by string concatenation, and the macro language
+renders a number to four decimal places — unless it is whole, which prints bare, or unless
+the result would exceed nine digits, in which case decimals are dropped until it fits. So
+`10797.7061` keeps four decimals and `190330.953` keeps three. The results table goes through
+a different route and uses ImageJ's default of three decimals throughout.
+
+**What boamotion does.** `_imagej_number` applies both rules when `legacy=True`, so the files
+look exactly like the original's. With `legacy=False` the traces are written in full, since
+rounding on the way out only loses precision.
+
+Note what this does *not* buy. Float32 arithmetic accumulates in a different order than
+ImageJ's, so trace values still differ by around 4e-8 relative — enough to change the third
+decimal of a six-digit number. The trace files can never be compared as text; they have to be
+parsed and compared numerically.

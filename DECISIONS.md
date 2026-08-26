@@ -370,6 +370,32 @@ falls outside the search range. Anyone averaging a column across beats silently 
 zeros and gets a value pulled toward zero. Corrected by `legacy=False`, which leaves the cell
 empty so the two can be told apart.
 
+#### F23 — The results table has no headers and no row numbers · *moderate*
+
+`Overview-results.txt` is bare numbers: one line per beat, ten tab-separated columns, and
+nothing that says what any column is. The cause is a single call at the top of the macro,
+`run("Input/Output...", "jpeg=100")`, which sets the JPEG quality and — because an ImageJ
+options string clears every checkbox it does not name — switches off *Save column headers*
+and *Save row numbers* as a side effect.
+
+**Consequence:** the file cannot be read without knowing the column order in advance, and
+anything that reads it positionally breaks silently if a percentage level is added or
+removed. It also means F15 never reaches disk: the mislabelled header exists only on
+screen. Corrected by `legacy=False`, which writes headers and row numbers.
+
+#### F26 — Numbers are written with ImageJ's own formatting · *cosmetic*
+
+The trace files hold four decimal places, except that whole numbers print bare and any
+value that would exceed nine digits loses decimals until it fits. The results table uses
+three decimals throughout. Both are ImageJ conventions rather than deliberate choices.
+
+**Consequence:** minor on its own, but it sets the ceiling on what a comparison against
+the original can prove. Even with the formatting reproduced exactly, float arithmetic
+accumulates in a different order here than in ImageJ, so trace values differ by about
+4e-8 relative — enough to change the third decimal of a six-digit number. Text comparison
+of the trace files is therefore not meaningful; they have to be parsed and compared with
+a tolerance. Corrected by `legacy=False`, which writes the values in full.
+
 #### F17 — The output file names mix conventions · *cosmetic*
 
 The original writes `contraction.txt` and `speed-of-contraction.txt` in lower case, but
@@ -482,6 +508,26 @@ criterion instead of the macro's sliding-window-and-threshold rule; and flank cr
 use a different rule than the macro's "three consecutive points beyond the level". The
 reference frame is also never removed from the stack, which the macro does. This is the
 direct justification for D4.
+
+#### F24 — Peak-to-peak time is the last column, not the seventh
+
+An ImageJ Results column is created the first time a value is written to it, and keeps
+that position. Peak-to-peak time is written first in the loop body but skipped for the
+first beat, which has no predecessor — so the three amplitude columns are created ahead of
+it and it lands last, the opposite of the order the code reads in.
+
+**Consequence:** only that the column order has to be taken from the output rather than
+from the source. Given F23, that order is the file's only description of itself.
+
+#### F25 — A drawing option also decides whether four measurements are recorded
+
+`drawPeaks` controls whether peak markers are drawn on the contraction figure. The same
+block fills the baseline, peak amplitude, contraction amplitude and peak-to-peak columns,
+so switching off an annotation would remove four measurements from the results table.
+
+**Consequence:** none in practice — the flag is hard-wired to `true` and no dialog exposes
+it. Worth recording because it would be a trap for anyone extending the macro. `boamotion`
+keeps the two separate: what is measured does not depend on what is drawn.
 
 #### F11 — Column naming convention
 
