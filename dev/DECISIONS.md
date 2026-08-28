@@ -32,13 +32,21 @@ rejected because COBRApy is a well-known package in the same scientific-Python s
 ### D3 — Faithful port, with the original's quirks reproducible · *proposed*
 
 The prototype's acceptance criterion is "same numbers as FIJI". Several genuine bugs in
-the original (section 3) change those numbers. We implement the original behaviour as the
-default, behind a single `legacy` switch, with corrected alternatives implemented and
-tested alongside.
+the original (section 3) change those numbers. Both behaviours are implemented and tested,
+behind a single `legacy` switch: `legacy=True` reproduces the original exactly, and
+`legacy=False` corrects every finding except F8 and F9.
+
+`legacy=False` is the default. The match against FIJI is what the switch exists to make
+demonstrable, and it has been demonstrated — every value agrees, and the traces to within
+float32 rounding. Once that is established, defaulting new users to reproduced bugs would
+be hard to defend; reproducing the original is the deliberate act, so it is the one that
+has to be asked for.
 
 **Trade-off:** the client gets a demonstrable match against their existing results *and*
 an explicit, per-item choice about which bugs to fix — rather than discovering that
-numbers changed silently. Cost is a modest amount of extra code and testing.
+numbers changed silently. The cost of defaulting to the corrected mode is that a run set
+up carelessly will not match old FIJI output; that is the intended reading, but it is
+worth stating plainly, and it is why every finding is listed individually in section 3.
 
 ### D4 — Reimplement the original's algorithms rather than substituting library equivalents · *taken*
 

@@ -62,8 +62,8 @@ def test_legacy_result_moves_when_the_search_starts_elsewhere():
     # The original maps the chosen point back to a frame number without accounting
     # for ref_search_start, so the same physical frame is reported differently.
     frames = constant_frames(MOTION)
-    assert detect(frames, ref_search_start=1, n_low_values=2, n_unity_values=2) == 4
-    assert detect(frames, ref_search_start=3, n_low_values=2, n_unity_values=2) == 1
+    assert detect(frames, ref_search_start=1, n_low_values=2, n_unity_values=2, legacy=True) == 4
+    assert detect(frames, ref_search_start=3, n_low_values=2, n_unity_values=2, legacy=True) == 1
 
 
 @pytest.mark.parametrize("n_low_values", [5, 10, 20, 30])
@@ -79,7 +79,8 @@ def test_legacy_selection_is_decided_by_the_radius_ranking_alone(n_low_values):
 @pytest.mark.parametrize("n_unity_values", [2, 5, 10, 15])
 def test_n_unity_values_has_no_effect_in_legacy_mode(n_unity_values):
     recording = synthetic_recording(noise=0.01, seed=0)
-    assert detect_reference_frame(recording.frames, n_unity_values=n_unity_values) == 6
+    frame = detect_reference_frame(recording.frames, n_unity_values=n_unity_values, legacy=True)
+    assert frame == 6
 
 
 @pytest.mark.parametrize("legacy", [True, False])
@@ -112,8 +113,8 @@ def test_selection_sizes_are_fitted_to_the_candidates(caplog):
 def test_the_chosen_frame_is_reported(caplog):
     recording = synthetic_recording(noise=0.01, seed=0)
     with caplog.at_level("INFO", logger="boamotion.reference"):
-        detect_reference_frame(recording.frames)
-    assert "Reference frame: 6" in caplog.text
+        frame = detect_reference_frame(recording.frames)
+    assert f"Reference frame: {frame}" in caplog.text
 
 
 def test_recording_too_short_to_search():

@@ -28,6 +28,12 @@ def test_defaults_match_the_original_macro(name, expected):
     assert getattr(Params(), name) == expected
 
 
+def test_the_corrected_behaviour_is_the_default():
+    # Not a macro parameter, so it is not in MACRO_DEFAULTS. Reproducing the original is
+    # the deliberate act, so it is the one that has to be asked for.
+    assert Params().legacy is False
+
+
 def test_keywords_override_defaults():
     params = Params(framerate=25, peak_threshold=50, high_freq_baseline=False)
     assert params.framerate == 25

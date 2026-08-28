@@ -136,8 +136,9 @@ def test_peaks_are_reported(caplog):
 
 def test_a_reference_frame_outside_the_trace_is_rejected():
     trace, _ = beat_train()
+    # Only legacy mode reads the trace at that index; corrected takes the trace minimum.
     with pytest.raises(ValueError, match="outside a trace"):
-        find_peaks(trace, reference_frame=len(trace))
+        find_peaks(trace, reference_frame=len(trace), legacy=True)
 
 
 def test_a_window_below_two_is_rejected():

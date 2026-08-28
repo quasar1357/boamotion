@@ -22,7 +22,7 @@ def detect_reference_frame(
     ref_search_stop: int = 300,
     n_low_values: int = 20,
     n_unity_values: int = 10,
-    legacy: bool = True,
+    legacy: bool = False,
 ) -> int:
     """Find the frame in which the tissue is most at rest, and return its 1-based number.
 

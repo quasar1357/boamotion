@@ -21,7 +21,7 @@ def build_motion_pixel_mask(
     *,
     mask_start_frame: int = 1,
     mask_end_frame: int | None = None,
-    legacy: bool = True,
+    legacy: bool = False,
 ) -> np.ndarray:
     """Find the pixels that move enough to be worth measuring.
 
@@ -71,7 +71,7 @@ def measure_contraction(
     reference_frame: int,
     *,
     mask: np.ndarray | None = None,
-    legacy: bool = True,
+    legacy: bool = False,
 ) -> np.ndarray:
     """Measure how far each frame is from rest, one value per frame.
 
@@ -110,7 +110,7 @@ def measure_speed(
     *,
     speed_window: int = 2,
     mask: np.ndarray | None = None,
-    legacy: bool = True,
+    legacy: bool = False,
 ) -> np.ndarray:
     """Measure how fast the image is changing, one value per frame.
 

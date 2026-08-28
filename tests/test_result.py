@@ -123,7 +123,24 @@ def test_the_headers_are_in_the_order_the_macro_writes_them():
 
 
 def test_every_expected_file_is_written(tmp_path):
-    _, target = written(tmp_path)
+    _, target = written(tmp_path, legacy=False)
+    assert target.name == "A001-results"
+    assert sorted(p.name for p in target.iterdir()) == [
+        "beats.csv",
+        "contraction.png",
+        "contraction.txt",
+        "log.txt",
+        "overview-results.txt",
+        "parameters.yaml",
+        "run-summary.txt",
+        "speed-comparison.png",
+        "speed-of-contraction.png",
+        "speed-of-contraction.txt",
+    ]
+
+
+def test_the_legacy_run_writes_the_original_names(tmp_path):
+    _, target = written(tmp_path, legacy=True)
     assert target.name == "A001-Contr-Results"
     assert sorted(p.name for p in target.iterdir()) == [
         "Comparison calculated (red) and measured (black) speed.jpg",
@@ -201,7 +218,7 @@ def test_numbers_are_written_the_way_the_macro_prints_them(value, expected):
 
 
 def test_the_legacy_traces_hold_no_more_than_four_decimals(tmp_path):
-    _, target = written(tmp_path)
+    _, target = written(tmp_path, legacy=True)
     lines = (target / "contraction.txt").read_text(encoding="utf-8").splitlines()
     decimals = [len(cell.partition(".")[2]) for line in lines for cell in line.split("\t")]
     assert max(decimals) <= 4
@@ -209,7 +226,7 @@ def test_the_legacy_traces_hold_no_more_than_four_decimals(tmp_path):
 
 def test_the_legacy_overview_has_no_header_and_no_row_numbers(tmp_path):
     # The macro's Input/Output call clears both save options, so the file is bare data.
-    result, target = written(tmp_path)
+    result, target = written(tmp_path, legacy=True)
     lines = (target / "Overview-results.txt").read_text(encoding="utf-8").splitlines()
 
     assert len(lines) == result.n_beats
@@ -231,7 +248,7 @@ def test_the_corrected_overview_keeps_its_header_and_numbers_rows_from_one(tmp_p
 
 
 def test_our_own_columns_stay_out_of_the_original_file(tmp_path):
-    result, target = written(tmp_path)
+    result, target = written(tmp_path, legacy=True)
     first = (target / "Overview-results.txt").read_text(encoding="utf-8").splitlines()[0]
     assert len(first.split("\t")) == len(original_headers(result.params))
 
@@ -279,14 +296,14 @@ def test_missing_measurements_are_left_empty_when_corrected(tmp_path):
 
 
 def test_an_existing_folder_is_never_overwritten(tmp_path):
-    result = analysed()
+    result = analysed(legacy=False)
     first = result.save(tmp_path)
     second = result.save(tmp_path)
     third = result.save(tmp_path)
 
-    assert first.name == "A001-Contr-Results"
-    assert second.name == "A001-Contr-Results-1"
-    assert third.name == "A001-Contr-Results-2"
+    assert first.name == "A001-results"
+    assert second.name == "A001-results-1"
+    assert third.name == "A001-results-2"
     assert first.exists() and second.exists()
 
 

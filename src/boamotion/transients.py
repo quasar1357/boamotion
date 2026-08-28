@@ -22,7 +22,7 @@ def find_peaks(
     reference_frame: int,
     peak_window: int = 20,
     peak_threshold: float = 30.0,
-    legacy: bool = True,
+    legacy: bool = False,
 ) -> np.ndarray:
     """Find the beats: local maxima that also clear a height threshold.
 
@@ -67,7 +67,7 @@ def find_baselines(
     high_freq_baseline: bool = True,
     baseline_threshold: float = 2.0,
     baseline_n_points: int = 5,
-    legacy: bool = True,
+    legacy: bool = False,
 ) -> np.ndarray:
     """Find the resting level each beat is measured from, one value per peak.
 

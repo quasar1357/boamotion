@@ -64,7 +64,7 @@ class Params:
 
     Compatibility:
         legacy: Reproduce the original macro's behaviour, including its known bugs.
-            See DECISIONS.md for what changes when this is False.
+            Off by default; see DECISIONS.md for what it changes.
     """
 
     # Recording
@@ -94,7 +94,7 @@ class Params:
     high_freq_baseline: bool = True
 
     # Compatibility
-    legacy: bool = True
+    legacy: bool = False
 
     def __post_init__(self) -> None:
         self.percentages = tuple(self.percentages)
