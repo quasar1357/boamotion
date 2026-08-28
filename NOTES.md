@@ -131,7 +131,7 @@ the notebook with it or the repo is inconsistent at that commit.
 | | 13 `Boa`, the user-facing class, and logging | done |
 | **E** | 14 Validation against FIJI output | synthetic done, real data pending |
 | | 15 Example notebook on the client's recording | needs data |
-| | 14b Diff tool: parse both output folders, compare numerically | **next** |
+| | 14b `validation/`: read the macro's log back, compare the tables numerically | done |
 | | — prototype complete — | |
 | **F** | 16 Other input formats: TIFF stacks, PNG, AVI | |
 | | 17 Gaussian blur, ROI, interactive reference picking | |

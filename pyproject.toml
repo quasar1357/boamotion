@@ -41,12 +41,14 @@ packages = ["src/boamotion"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-src = ["src", "tests"]
+src = ["src", "tests", "validation"]
 
 [tool.ruff.lint]
 # pycodestyle, pyflakes, import sorting, pyupgrade, bugbear, simplify, numpy
 select = ["E", "W", "F", "I", "UP", "B", "SIM", "NPY"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+# `validation` is not part of the package, so its tests need it on the path.
+testpaths = ["tests", "validation"]
+pythonpath = ["validation"]
 addopts = "-q"
