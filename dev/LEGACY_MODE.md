@@ -1,6 +1,6 @@
 # The original's quirks, in its own code
 
-The last section of [`HOW_IT_WORKS.md`](HOW_IT_WORKS.md) describes these quirks in plain
+The last section of [`how-it-works.md`](../docs/how-it-works.md) describes these quirks in plain
 language, and section 3 of [`DECISIONS.md`](DECISIONS.md) records what each means for
 results. This file is the working reference behind both: for each one, the actual FIJI
 macro source, why it behaves as it does, and what `boamotion` does in either mode.

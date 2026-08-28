@@ -207,7 +207,8 @@ science — the tool is well designed and widely used — but they affect what "
 results" means, so the client should see them.
 
 **The F numbers below are the labels used throughout.** The same number identifies the same
-finding in [`HOW_IT_WORKS.md`](HOW_IT_WORKS.md) and in [`LEGACY_MODE.md`](LEGACY_MODE.md),
+finding in [`how-it-works.md`](../docs/how-it-works.md) and in
+[`LEGACY_MODE.md`](LEGACY_MODE.md),
 so a finding can be followed from its consequence here, to its plain-language description
 there, to the original source and the mechanism worked through line by line.
 

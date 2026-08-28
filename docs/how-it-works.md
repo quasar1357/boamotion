@@ -177,8 +177,9 @@ in order to reproduce its output faithfully. With `legacy=True`, boamotion behav
 original does throughout; `legacy=False` corrects all of these except F8 and F9, which
 are definitions rather than mistakes and so are kept in both modes.
 
-The F numbers are shared with `DECISIONS.md`, which records what each means for results,
-and with `LEGACY_MODE.md`, which shows the original source and works the mechanism through.
+The F numbers are shared with [`DECISIONS.md`](../dev/DECISIONS.md), which records what each
+means for results, and with [`LEGACY_MODE.md`](../dev/LEGACY_MODE.md), which shows the
+original source and works the mechanism through.
 They follow the analysis from the reference frame through to the transients, rather than
 running in order of importance — see the closing paragraph for that.
 

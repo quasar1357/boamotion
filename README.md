@@ -26,16 +26,23 @@ from `pyproject.toml`. A virtual environment works equally well: `pip install -e
 
 ## Project files
 
-- [`HOW_IT_WORKS.md`](HOW_IT_WORKS.md) — what the analysis computes and what each
+How to use it, in [`docs/`](docs):
+
+- [`how-it-works.md`](docs/how-it-works.md) — what the analysis computes and what each
   parameter changes.
-- [`LEGACY_MODE.md`](LEGACY_MODE.md) — the original macro's quirks worked through against
-  its own source, and what each `legacy` branch does.
-- [`notebooks/`](notebooks) — worked examples.
+- [`demo.ipynb`](docs/demo.ipynb) — running BoaMotion end to end.
+
+How it was built, in [`dev/`](dev):
+
+- [`DECISIONS.md`](dev/DECISIONS.md) — design decisions, open questions and findings to
+  discuss with the client.
+- [`LEGACY_MODE.md`](dev/LEGACY_MODE.md) — the original macro's quirks worked through
+  against its own source, and what each `legacy` branch does.
+- [`NOTES.md`](dev/NOTES.md) — working notes on the original macro and this port.
+- [`BUILDING_BLOCKS.ipynb`](dev/BUILDING_BLOCKS.ipynb) — the analysis stage by stage.
+
 - [`validation/`](validation) — checking a `legacy=True` run against the output the
   original macro itself produced.
-- [`NOTES.md`](NOTES.md) — working notes on the original macro and this port.
-- [`DECISIONS.md`](DECISIONS.md) — design decisions, open questions and findings to
-  discuss with the client.
 
 ## Origin and licence
 
@@ -44,4 +51,4 @@ Center / University of Glasgow, 2017), published as Sala & van Meer et al.,
 *Circulation Research* 122(3):e5–e16, 2018, doi:10.1161/CIRCRESAHA.117.312067.
 
 The original is GPL-3.0; this port is GPL-3.0 as well. See [`LICENSE`](LICENSE) and the
-licence note in [`DECISIONS.md`](DECISIONS.md).
+licence note in [`DECISIONS.md`](dev/DECISIONS.md).

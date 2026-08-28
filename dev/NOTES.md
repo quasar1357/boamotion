@@ -2,8 +2,8 @@
 
 Internal notes for developing `boamotion`. The other three documents:
 
-- [`HOW_IT_WORKS.md`](HOW_IT_WORKS.md) — what the analysis computes and what each parameter
-  changes, in plain language. The public description of the method.
+- [`how-it-works.md`](../docs/how-it-works.md) — what the analysis computes and what each
+  parameter changes, in plain language. The public description of the method.
 - [`DECISIONS.md`](DECISIONS.md) — decisions, open questions and findings to raise with the
   client. Everything client-facing lives there.
 - [`LEGACY_MODE.md`](LEGACY_MODE.md) — the original macro's quirks worked through against
@@ -240,6 +240,52 @@ Two places where the obvious numpy default differs from ImageJ:
   over a whole frame, but it is part of the mask threshold.
 - **Precision.** Image arithmetic in float32, matching ImageJ's 32-bit images; means
   accumulate in float64, matching its double-precision statistics.
+
+## The documentation scheme, for the final overhaul
+
+Decided ahead of writing the demo notebook, so the notebook is written into a system
+rather than retrofitted later. The folders and the moves are done; the book itself is
+not built yet, and the tooling below is a preference rather than a commitment.
+
+The split is not user versus developer but **how to use it** versus **how it was built**.
+That keeps `DECISIONS.md` where it belongs: the client reads it as a stakeholder in the
+build, not as a contributor.
+
+```
+README.md         landing: intro, install, one snippet, links out
+mkdocs.yml        not written yet
+docs/             the book, published; lowercase names become URLs
+  demo.ipynb  how-it-works.md          (index.md, installation.md still to write)
+dev/              the build record; keeps its current names
+  DECISIONS.md  LEGACY_MODE.md  NOTES.md  BUILDING_BLOCKS.ipynb
+validation/       stays put, a check rather than a document
+```
+
+`notebooks/` is gone; only the untracked scratch notebook still sits there. The chapter
+order is `index`, `installation`, `demo`, `how-it-works`.
+
+- **Folders carry the flag, not filename prefixes.** `docs_`/`dev_` would fight the
+  conventions GitHub and the tooling already recognise, and the parent folder says it.
+- **MkDocs with Material, `mkdocs-jupyter` and `mkdocstrings`.** Sphinx is more machinery
+  than nine modules justify.
+- **`mkdocs-jupyter` renders a notebook as a page**, so the demo notebook *is* the "How to
+  run" chapter rather than being summarised into one. No second source to drift.
+- **`mkdocstrings` settles the parameter question**: descriptions live only in the `Params`
+  docstrings and the book renders them. Turning those docstrings into publishable prose
+  is part of building the documentation, not something to do piecemeal beforehand.
+- **The demo comes before the explanation.** Install, run, then understand: someone who
+  has a result in front of them reads `how-it-works` better, and someone who has not will
+  skip it either way.
+- **Only the user book is built.** The `dev/` files stay plain markdown, read on GitHub.
+  They are read by three people and change every session, so a second nav is maintenance
+  without a reader. Adding a "Development" section to the same book later is a few lines
+  of `mkdocs.yml`, so nothing is foreclosed.
+- **The demo runs on `synthetic.py`**, which needs no data, so CI can execute it and catch
+  a stale demo. No other notebook has that property.
+- `NOTES.md` moves into `dev/` as a plan file rather than a document; if `dev/` is ever
+  built, it stays out of the nav.
+- The README links rather than summarises, except where a summary is three sentences that
+  will not drift.
 
 ## Notebooks
 
