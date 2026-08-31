@@ -14,6 +14,7 @@ no equivalent of. Those use our own column names; the reproduced files use the o
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -300,6 +301,10 @@ def _write_overview(path: Path, beats: pd.DataFrame, params: Params) -> None:
     if params.legacy:
         table = table.fillna(0)
 
+    # Every other file we write goes through text mode and so follows the platform's
+    # line ending, as ImageJ does. Say so here too, or this one file disagrees.
+    endings = {"lineterminator": os.linesep}
+
     # legacy: the macro's run("Input/Output...", "jpeg=100") clears every checkbox it
     # does not name, including the two that save column headers and row numbers.
     if params.legacy:
@@ -308,13 +313,13 @@ def _write_overview(path: Path, beats: pd.DataFrame, params: Params) -> None:
             sep="\t",
             header=False,
             index=False,
-            lineterminator="\n",
             float_format=lambda value: _imagej_number(value, 3),
+            **endings,
         )
         return
 
     table.index = pd.RangeIndex(1, len(table) + 1)
-    table.to_csv(path, sep="\t", index_label=" ", lineterminator="\n")
+    table.to_csv(path, sep="\t", index_label=" ", **endings)
 
 
 def _write_summary(path: Path, result: Result) -> None:

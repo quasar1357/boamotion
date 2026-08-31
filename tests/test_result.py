@@ -1,5 +1,6 @@
 import dataclasses
 import logging
+import os
 from pathlib import Path
 
 import numpy as np
@@ -51,6 +52,16 @@ def analysed(**overrides) -> Result:
 def written(tmp_path, **overrides):
     result = analysed(**overrides)
     return result, result.save(tmp_path)
+
+
+def test_every_written_file_uses_the_platform_line_ending(tmp_path):
+    # ImageJ writes whatever the platform uses, so a text diff against its output only
+    # works if we match it. pandas would otherwise pin "\n" for the overview alone.
+    _, folder = written(tmp_path, legacy=True)
+    for name in ("contraction.txt", "speed-of-contraction.txt", "Overview-results.txt"):
+        text = (folder / name).read_bytes().decode()
+        assert text.endswith(os.linesep)
+        assert text.count(os.linesep) == text.count("\n")
 
 
 # --- what the object holds -----------------------------------------------------------
