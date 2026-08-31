@@ -174,7 +174,7 @@ lowest level; `flank_level_index` chooses which, and defaults to it.
 MUSCLEMOTION is a well-designed and widely used tool, and the items below are not a
 criticism of the science. They are implementation details we had to decide how to handle
 in order to reproduce its output faithfully. With `legacy=True`, boamotion behaves as the
-original does throughout; `legacy=False` corrects all of these except F8 and F9, which
+original does throughout; `legacy=False` corrects all of these except F10 and F14, which
 are definitions rather than mistakes and so are kept in both modes.
 
 The F numbers are shared with [`DECISIONS.md`](../dev/DECISIONS.md), which records what each
@@ -207,7 +207,7 @@ off-by-ones cancel.
 directly, so all amplitudes are scaled by 255. Harmless given arbitrary units, but it must
 be reproduced to match the original's numbers.
 
-**F5 — The peak threshold uses an arbitrary reference value.** The threshold is computed
+**F9 — The peak threshold uses an arbitrary reference value.** The threshold is computed
 relative to `trace[reference_frame_number]`, indexing the contraction *trace* with a
 *frame number*. The two do not line up: frame numbers count from 1 while trace positions
 count from 0, and the reference frame is left out of the trace, so everything after it
@@ -216,7 +216,12 @@ is near zero early on the result is often acceptable. If the reference frame num
 happens to fall on or near a peak, however, the threshold shifts and peaks are wrongly
 admitted or dropped.
 
-**F6 — A single detected peak loses its baseline.** If exactly one peak is found, a literal
+**F10 — The peak window is a frame narrower than it names**, comparing each candidate
+against its neighbours out to `peak_window/2 - 1` rather than `peak_window/2`. The same loop
+never examines the first or last half-window of the trace at all, so a beat at the very
+start of a recording cannot be detected.
+
+**F12 — A single detected peak loses its baseline.** If exactly one peak is found, a literal
 `false` (evaluating to 0) is appended to the peak list so that later array arithmetic
 works. No extra result row appears, but the real beat now looks as though it has a
 neighbour at position 0, and the distances derived from that neighbour come out negative.
@@ -224,51 +229,46 @@ In the flat-baseline mode this leaves the baseline at zero, so the reported cont
 amplitude is the raw peak height rather than the height above rest. It affects short or
 slowly beating recordings.
 
-**F7 — A baseline shortage narrows every later beat.** In the flat-baseline mode, a beat
+**F13 — A baseline shortage narrows every later beat.** In the flat-baseline mode, a beat
 that does not offer enough flat points to average reduces the number of points used — but
 it reduces the setting itself rather than a per-beat copy, so every *later* beat in the
 recording averages fewer points too, and the count only ever falls. One noisy beat early on
 can leave the rest of the recording with baselines averaged over one or two points.
 
-**F8 — The peak window is a frame narrower than it names**, comparing each candidate
-against its neighbours out to `peak_window/2 - 1` rather than `peak_window/2`. The same loop
-never examines the first or last half-window of the trace at all, so a beat at the very
-start of a recording cannot be detected.
-
-**F9 — The first percentage silently defines three other measures**, as described above.
+**F14 — The first percentage silently defines three other measures**, as described above.
 This only matters when the lowest level is deselected, at which point time-to-peak and
 relaxation time change meaning without warning.
 
-**F15 — The contraction-duration column is labelled 10% whatever level was used.** The
+**F17 — The contraction-duration column is labelled 10% whatever level was used.** The
 header is hard-coded, so if the first percentage is not 10% the results file misstates what
 was measured.
 
-**F16 — A measurement that could not be found is written as 0.** A crossing that could not be
+**F18 — A measurement that could not be found is written as 0.** A crossing that could not be
 located is stored as `false`, which the results table records as zero — indistinguishable from
 a genuine measurement of zero. Averaging such a column pulls the answer toward zero.
 
-**F23 — The results table is written without headers or row numbers.** One call at the
+**F19 — The results table is written without headers or row numbers.** One call at the
 top of the macro sets the JPEG quality, and because an ImageJ options string clears every
 checkbox it does not name, it switches off *Save column headers* and *Save row numbers*
 as a side effect. `Overview-results.txt` is therefore bare numbers, readable only by
 someone who already knows the column order — and anything reading it by position breaks
-silently when a percentage level is added or removed. It is also why F15 never reaches
+silently when a percentage level is added or removed. It is also why F17 never reaches
 disk: the mislabelled header exists only on screen.
 
-**F26 — Numbers are written with ImageJ's own formatting.** Four decimal places in the
+**F21 — Numbers are written with ImageJ's own formatting.** Four decimal places in the
 trace files and three in the results table, whole numbers printed bare, and any value
 past nine digits losing decimals until it fits. `legacy=False` writes them in full.
 
-**F17 — The output file names mix conventions.** Lower-case text files, capitalised
+**F22 — The output file names mix conventions.** Lower-case text files, capitalised
 images, spaces and brackets in one of them. No effect on any number; `legacy=False`
 writes lower-case hyphenated names instead.
 
-**F22 — The speed comparison plot ends in a drop to zero.** Both curves are scaled to
+**F23 — The speed comparison plot ends in a drop to zero.** Both curves are scaled to
 0-1 before plotting, by a loop that stops one short, so each keeps a final zero. The
 figure ends in a vertical drop that is not in the data.
 
-In practice F1 and F5 can genuinely change results, and F7 matters whenever the
-flat-baseline mode is used. F2 shifts numbers slightly, F3 and F6 affect edge cases only,
-F4 is a constant factor, F8 changes which beats are found at the ends of a recording, and
-F9 depends on which percentage levels are selected. F15, F16, F17, F22, F23 and F26 change
+In practice F1 and F9 can genuinely change results, and F13 matters whenever the
+flat-baseline mode is used. F2 shifts numbers slightly, F3 and F12 affect edge cases only,
+F4 is a constant factor, F10 changes which beats are found at the ends of a recording, and
+F14 depends on which percentage levels are selected. F17, F18, F19, F21, F22 and F23 change
 how results are written and drawn rather than what was measured.

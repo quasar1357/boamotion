@@ -55,7 +55,7 @@ def test_settings_can_be_changed_between_runs():
     analyser, _ = boa()
     assert analyser.run().n_beats == 4
 
-    # A wider window puts the last beat inside the detector's blind spot (F8).
+    # A wider window puts the last beat inside the detector's blind spot (F10).
     analyser.params.peak_window = 18
     assert analyser.run().n_beats == 3
 

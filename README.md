@@ -43,8 +43,8 @@ How it was built, in [`dev/`](dev):
 - [`NOTES.md`](dev/NOTES.md) — working notes on the original macro and this port.
 - [`BUILDING_BLOCKS.ipynb`](dev/BUILDING_BLOCKS.ipynb) — the analysis stage by stage.
 
-- [`validation/`](validation) — checking a `legacy=True` run against the output the
-  original macro itself produced.
+Checked against the original in [`validation/`](validation), where a `legacy=True` run is
+diffed against the output the macro itself produced.
 
 ## Origin and licence
 

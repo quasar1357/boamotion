@@ -32,37 +32,25 @@ temporary before `newArray(...)`. No behavioural difference.
 
 ## What the macro computes
 
-Four stages. Everything is measured over the **whole frame** — the macro has no ROI or
-cropping anywhere.
+[`how-it-works.md`](../docs/how-it-works.md) describes the method; this is the same four
+stages in the macro's own vocabulary, for reading `MUSCLEMOTION v1-1beta.ijm` beside it.
 
-**1. Reference frame.** Build a motion trace `speed[i] = mean(|frame[i+speedWindow] - frame[i]|)`,
-then plot each value against its successor (a phase-plane). Quiescent frames lie near the
-origin (little motion) *and* near the unity line (motion not changing), which separates a
-genuinely relaxed frame from a momentary zero-crossing mid-transient. Take the `lowValueN`
-points nearest the origin, then the `unitySelectionN` of those nearest the unity line. The
-chosen frame is then **removed from the stack** for all later measurements.
+1. **Reference frame.** A motion trace `speed[i] = mean(|frame[i+speedWindow] - frame[i]|)`
+   plotted against its own successor; the `lowValueN` points nearest the origin, then the
+   `unitySelectionN` of those nearest the unity line. The chosen frame is then **removed
+   from the stack** for every later measurement.
+2. **Pixel mask** (`pixelsOfInterest`, "noise reduction"). A maximum-intensity projection of
+   `|frame[i] - reference|` over `MPstartRange … MPendRange`, thresholded at `mean + std` of
+   that projection and binarised to 0/255 rather than 0/1.
+3. **Traces** (`getContractionData`). `contraction` against the fixed reference frame,
+   `speed` against a frame `speedWindow` later, both averaged over the whole frame with the
+   mask multiplied in. Image arithmetic is 32-bit float.
+4. **Transient analysis** (`transientAnalysis`). `PeakDetectionWindow` and `peakThreshold`
+   find the peaks, `highFreqBaselineDetection` chooses between the two baseline rules, and
+   each requested percentage of the peak-to-baseline amplitude gives a crossing on each
+   flank.
 
-**2. Pixel mask** (`pixelsOfInterest`, "noise reduction"). Accumulate a maximum-intensity
-projection of `|frame[i] - reference|` over the recording, threshold at `mean + std` of that
-projection, binarise to 0/255.
-
-**3. Traces.**
-
-```
-contraction[i] = mean( |frame[i] - reference|           * mask )
-speed[i]       = mean( |frame[i] - frame[i+speedWindow]| * mask )
-```
-
-Both in arbitrary units. Image maths is done in 32-bit float. The mask being 0/255 rather
-than 0/1 scales the traces by 255; harmless given the arbitrary units, but must be matched
-if we want identical numbers.
-
-**4. Transient analysis.** Sliding-window local-maximum peak finder with an amplitude
-threshold; a per-peak baseline (minimum before the peak, or an average of the flattest
-points before it); then per requested percentage of the peak-to-baseline amplitude, the
-crossing points on both flanks, requiring 3 consecutive points beyond the level to reject
-noise. Yields time-to-peak, relaxation time, contraction duration, peak-to-peak time,
-amplitudes and percentage transient durations.
+Everything is measured over the **whole frame** — the macro has no ROI or cropping anywhere.
 
 ## Original outputs (7 files per recording)
 
@@ -73,7 +61,8 @@ time and value, no header), `Contraction.jpg`, `Speed of contraction.jpg`,
 
 ## Standing implementation constraints
 
-Applied from the start so the cluster route stays open without doing cluster work now:
+Applied from the start so the cluster route stays open without doing cluster work now.
+The reasoning is in `DECISIONS.md` (D5, D6, D9, D10); these are the rules they imply.
 
 - The core is a pure function of *(input path, parameters)*, no global state.
 - No GUI import anywhere in the analysis path; must run headless.
@@ -84,18 +73,16 @@ Applied from the start so the cluster route stays open without doing cluster wor
 
 ## Open items
 
-- Waiting on the client's example data (`A001.zip`, TIFF sequence, ~800 frames, 25 fps).
-  It was shared as a SharePoint link we have no rights to; access was requested through
-  SharePoint, and the client was asked to approve it on 21 August 2026. This is the only
-  real blocker — with the recording in hand we can run the FIJI plugin ourselves and diff
-  against that, so the client's own results folder is useful but not required.
-- Waiting on the `demo/` folder with `demo_stack.tif` and reference outputs, if the client
-  has it — it is *not* in the public GitHub repo. It would validate against the authors'
-  own reference numbers rather than a run of our own.
-- The client's dialog-1 answers are unknown, but they do not decide the diff: both sides
-  can simply be run with the same settings. What was asked instead is whether Gaussian
-  blur or cropping are part of their routine, since those two alone are unimplemented
-  (step 18) — noise reduction and a manually chosen reference frame are already settings.
+The questions themselves are `DECISIONS.md` section 2; this is what we are waiting for.
+
+- **`A001.zip`** (TIFF sequence, ~800 frames, 25 fps) was shared as a SharePoint link we
+  have no rights to; access was requested there and the client asked to approve it on
+  21 August 2026. This is the only real blocker — with the recording in hand we can run the
+  FIJI plugin ourselves, so their own results folder is useful but not required.
+- **The `demo/` folder** (Q2), if their FIJI installation has it.
+- **The first dialog's answers** (Q3). They do not decide the diff, since both sides can be
+  run with the same settings; what matters is only whether Gaussian blur or cropping are
+  part of the routine, as those two alone are unimplemented (step 18).
 
 ## Frame ordering in image sequences
 
@@ -173,23 +160,41 @@ Running `boamotion` with `legacy=True` on the same folder agrees in both cases:
   while ImageJ and everything else we write follow the platform.
 - **The traces agree to 4e-8 relative**, which is float32 accumulation order. That is the
   floor; text comparison of the trace files is not meaningful, so a diff has to parse them
-  and compare with a tolerance (F26).
+  and compare with a tolerance (F21).
 
-Three of the four things this section previously listed as inferred are now observed. The
-layout of `Overview-results.txt` is settled by F23 and F24 — no header row, no row-number
-column, peak-to-peak time last. Missing measurements really are written as `0` (F16), on
+Everything this section once listed as inferred about the output is now observed. The
+layout of `Overview-results.txt` is settled by F19 and F20 — no header row, no row-number
+column, peak-to-peak time last. Missing measurements really are written as `0` (F18), on
 the fourth beat, whose falling crossing the macro also failed to find. Number formatting is
-settled by F26.
+settled by F21.
 
-What is still unobserved:
+The column names too, which the saved file cannot show (F19) and which we therefore had
+only from the source. Read off the Results window on 31 August 2026, all ten agree with
+`ORIGINAL_HEADERS` character for character, `Relaxation Time`'s capital T included:
 
-1. **The percentage column names.** `<100-p>-to-<100-p> transient (ms)` remains inference,
-   and this run could not test it: the macro never writes headers, so the string exists
-   only in the Results window. It matters only for `legacy=False`, which writes headers of
-   its own.
-2. **A recording that is not synthetic.** The noisy run does exercise the baseline logic
-   (F6, F7), which the noise-free one could not, but every beat here is still identical
-   and the noise is uniform. The client's A001 is the test that counts.
+```
+Contraction duration [10% above baseline] (ms)	Time-to-peak (ms)	Relaxation Time (ms)
+90-to-90 transient (ms)	50-to-50 transient (ms)	10-to-10 transient (ms)
+Baseline value (a.u.)	Peak amplitude (a.u.)	Contraction amplitude (a.u.)
+Peak-to-peak time (ms)
+```
+
+That settles the `100 - percentage` naming (F16) and peak-to-peak time's position (F20).
+F17 needed a second run, since a first level of 10 makes a hard-coded label and a correct
+one look identical. With the levels set to 30, 50 and 80 the macro still writes
+`[10% above baseline]`, and the duration beneath it reads 400 ms — the `70-to-70` transient,
+the first level's, not the 10% one. That is F17 and F14 observed together, and `boamotion`
+with `legacy=True` reproduces the whole table, headers and all four beats, exactly.
+
+The same run explains the zeros of the default one. At 10% the fourth beat's falling
+crossing falls past the end of the trace and is written as `0` (F18); at 30% it lands
+inside, and both tools measure all four beats. The comparison therefore covers two
+parameter sets, not just the defaults.
+
+What is still unobserved is **a recording that is not synthetic**. The noisy run does
+exercise the baseline logic (F12, F13), which the noise-free one could not, but every beat
+here is still identical and the noise is uniform. The client's A001 is the test that
+counts.
 
 ## Where each finding lives
 
@@ -198,43 +203,43 @@ This says which code it touches. Two things are being tracked at once, so they g
 own columns: whether we **correct** it, and whether it is **written** yet.
 
 | F   | Where                                                              | Correct it? | Written         |
-| --- | ------------------------------------------------------------------ | ----------- | --------------- |
+|-----|--------------------------------------------------------------------|-------------|-----------------|
 | F1  | `reference.py` — `_select_legacy` vs `_select`                     | yes         | step 7          |
 | F2  | `reference.py` — the frame mapping in `detect_reference_frame`     | yes         | step 7          |
 | F3  | `traces.py` — `_frames_to_use`                                     | yes         | step 8          |
 | F4  | `traces.py` — `_mask_weight`                                       | yes         | step 9          |
-| F5  | `transients.py` — `_zero_level`                                    | yes         | step 10a        |
-| F6  | `transients.py` — `_range_positions`                               | yes         | step 10a        |
-| F7  | `transients.py` — `_legacy_flat_average`                           | yes         | step 10a        |
-| F8  | `transients.py` — `_dominates_neighbours`                          | no          | step 10a        |
-| F9  | `transients.py` — `measure_transients`                             | no          | step 10b        |
-| F10 | no code; it is the reasoning behind D4                             | no          | —               |
-| F11 | `result.py` — the output column names                              | no          | **step 11**     |
-| F12 | `params.py` — superseded by `Params` and YAML, per D6              | no          | step 4          |
-| F13 | `traces.py` — `_mean_change` averages the whole frame              | no          | step 9          |
-| F14 | `result.py` — `time_ms`, and the figures drawn on it               | no          | steps 11 and 12 |
-| F15 | `result.py` — `original_headers`                                   | yes         | step 11         |
-| F16 | `result.py` — `_write_overview`                                    | yes         | step 11         |
-| F17 | `result.py` — `file_names`                                         | yes         | steps 11 and 12 |
-| F22 | `result.py` — `comparison_curves`                                  | yes         | step 12         |
-| F23 | `result.py` — `_write_overview`                                    | yes         | step 14         |
-| F26 | `result.py` — `_imagej_number`                                     | yes         | step 14         |
-| F24 | `result.py` — `ORIGINAL_HEADERS`                                   | no          | step 14         |
-| F25 | no code; the macro couples drawing to measuring, we do not         | no          | —               |
-| F18 | `traces.py` — the fixed `mean + std` threshold                     | no          | step 8          |
-| F19 | `transients.py` — the fixed three-point test in `_crossing_before` | no          | step 10b        |
-| F20 | `traces.py` — `_frames_without_reference`                          | no          | step 9          |
-| F21 | `transients.py` — `find_peaks`                                     | no          | step 10a        |
+| F5  | `traces.py` — the fixed `mean + std` threshold                     | no          | step 8          |
+| F6  | `traces.py` — `_mean_change` averages the whole frame              | no          | step 9          |
+| F7  | `traces.py` — `_frames_without_reference`                          | no          | step 9          |
+| F8  | `result.py` — `time_ms`, and the figures drawn on it               | no          | steps 11 and 12 |
+| F9  | `transients.py` — `_zero_level`                                    | yes         | step 10a        |
+| F10 | `transients.py` — `_dominates_neighbours`                          | no          | step 10a        |
+| F11 | `transients.py` — `find_peaks`                                     | no          | step 10a        |
+| F12 | `transients.py` — `_range_positions`                               | yes         | step 10a        |
+| F13 | `transients.py` — `_legacy_flat_average`                           | yes         | step 10a        |
+| F14 | `transients.py` — `measure_transients`                             | no          | step 10b        |
+| F15 | `transients.py` — the fixed three-point test in `_crossing_before` | no          | step 10b        |
+| F16 | `result.py` — the output column names                              | no          | step 11         |
+| F17 | `result.py` — `original_headers`                                   | yes         | step 11         |
+| F18 | `result.py` — `_write_overview`                                    | yes         | step 11         |
+| F19 | `result.py` — `_write_overview`                                    | yes         | step 14         |
+| F20 | `result.py` — `ORIGINAL_HEADERS`                                   | no          | step 14         |
+| F21 | `result.py` — `_imagej_number`                                     | yes         | step 14         |
+| F22 | `result.py` — `file_names`                                         | yes         | steps 11 and 12 |
+| F23 | `result.py` — `comparison_curves`                                  | yes         | step 12         |
+| F24 | no code; the macro couples drawing to measuring, we do not         | no          | —               |
+| F25 | `params.py` — superseded by `Params` and YAML, per D6              | no          | step 4          |
+| F26 | no code; it is the reasoning behind D4                             | no          | —               |
 
 Two traps in reading this. "We do not correct it" does not mean there is nothing to write:
-F11 and F14 are behaviours we deliberately copy, and copying them is still work. And a
-finding's `legacy` branch sits in exactly one helper — F6 for instance branches only in
+F8 and F16 are behaviours we deliberately copy, and copying them is still work. And a
+finding's `legacy` branch sits in exactly one helper — F12 for instance branches only in
 `_range_positions`, even though the damage surfaces in `_steepest_rise`.
 
-**To do at the final overhaul:** renumber and regroup all the findings once the picture is
-complete. The F1-F9 boundary in particular is drawn where it is only because those are the
-ones read line by line so far — F13 and F14 are implementation details too, and F14 will
-likely earn its own `LEGACY_MODE.md` section once the figures are written in step 12.
+The numbers follow the order the analysis meets each finding — reference frame, mask,
+traces, transients, output — so a higher number is a later stage rather than a later
+discovery. They were renumbered into that order once the picture was complete; nothing
+outside this repo ever referred to the old ones.
 
 ## Marking the `legacy` branches
 

@@ -13,13 +13,13 @@ remember why a function has two branches. Line numbers refer to
 one to the next. The seventeen below are the quirks of the original's implementation; the
 rest of the findings in `DECISIONS.md` are observations of another kind.
 
-All are implemented. Every one is corrected by `legacy=False` except F8, F9, F24 and F25.
+All are implemented. Every one is corrected by `legacy=False` except F10, F14, F20 and F24.
 The first two are definitions rather than mistakes, so they are reproduced in **both**
 modes: changing them would silently alter every result. The other two are not ours to
-correct — a column order and a coupling we simply never had. They run roughly in the
-order the analysis meets them — reference frame, mask, transients, output — which is
-numeric order apart from F15 onwards, added later and due to be renumbered at the final
-overhaul.
+correct — a column order and a coupling we simply never had. The numbers follow the order
+the analysis meets them — reference frame, mask, traces, transients, output — so a higher
+number is a later stage, and the gaps are the findings in `DECISIONS.md` that are not
+quirks of the implementation.
 
 Three conventions to keep in mind while reading the excerpts. Arrays in the ImageJ macro
 language are **0-based**, but stack slices are **1-based**, and the macro mixes the two
@@ -38,19 +38,19 @@ what makes the all-`+` expression in F2 print `511` instead of `52`.
 | F2 | [The search start is not added back](#f2--the-search-start-is-not-added-back) | minor | `reference.py` `detect_reference_frame` |
 | F3 | [The mask loses its last frame](#f3--the-mask-loses-its-last-frame) | minor | `traces.py` `_frames_to_use` |
 | F4 | [The mask holds 255, not 1](#f4--the-mask-holds-255-not-1) | constant factor | `traces.py` `_mask_weight` |
-| F5 | [The peak threshold indexes the trace with a frame number](#f5--the-peak-threshold-indexes-the-trace-with-a-frame-number) | moderate | `transients.py` `_zero_level` |
-| F6 | [A single detected peak loses its baseline](#f6--a-single-detected-peak-loses-its-baseline) | edge case | `transients.py` `_range_positions` |
-| F7 | [A baseline shortage narrows every later beat](#f7--a-baseline-shortage-narrows-every-later-beat) | moderate | `transients.py` `_legacy_flat_average` |
-| F8 | [The peak window is a frame narrower than it reads](#f8--the-peak-window-is-a-frame-narrower-than-it-reads) | minor | `transients.py` `_dominates_neighbours` |
-| F9 | [The first percentage defines three other measures](#f9--the-first-percentage-defines-three-other-measures) | by design | `transients.py` `measure_transients` |
-| F15 | [The duration column is labelled 10% whatever was used](#f15--the-duration-column-is-labelled-10-whatever-was-used) | moderate | `result.py` `original_headers` |
-| F16 | [A measurement that was never found is written as 0](#f16--a-measurement-that-was-never-found-is-written-as-0) | moderate | `result.py` `_write_overview` |
-| F17 | [The output file names mix conventions](#f17--the-output-file-names-mix-conventions) | cosmetic | `result.py` `file_names` |
-| F22 | [The speed comparison plot ends in a drop to zero](#f22--the-speed-comparison-plot-ends-in-a-drop-to-zero) | minor | `result.py` `comparison_curves` |
-| F23 | [The results table is saved without headers or row numbers](#f23--the-results-table-is-saved-without-headers-or-row-numbers) | moderate | `result.py` `_write_overview` |
-| F24 | [Peak-to-peak time ends up in the last column](#f24--peak-to-peak-time-ends-up-in-the-last-column) | minor | `result.py` `ORIGINAL_HEADERS` |
-| F25 | [Four result columns are gated by a drawing option](#f25--four-result-columns-are-gated-by-a-drawing-option) | minor | not reproduced |
-| F26 | [Numbers are written with ImageJ's own formatting](#f26--numbers-are-written-with-imagejs-own-formatting) | cosmetic | `result.py` `_imagej_number` |
+| F9 | [The peak threshold indexes the trace with a frame number](#f9--the-peak-threshold-indexes-the-trace-with-a-frame-number) | moderate | `transients.py` `_zero_level` |
+| F10 | [The peak window is a frame narrower than it reads](#f10--the-peak-window-is-a-frame-narrower-than-it-reads) | minor | `transients.py` `_dominates_neighbours` |
+| F12 | [A single detected peak loses its baseline](#f12--a-single-detected-peak-loses-its-baseline) | edge case | `transients.py` `_range_positions` |
+| F13 | [A baseline shortage narrows every later beat](#f13--a-baseline-shortage-narrows-every-later-beat) | moderate | `transients.py` `_legacy_flat_average` |
+| F14 | [The first percentage defines three other measures](#f14--the-first-percentage-defines-three-other-measures) | by design | `transients.py` `measure_transients` |
+| F17 | [The duration column is labelled 10% whatever was used](#f17--the-duration-column-is-labelled-10-whatever-was-used) | moderate | `result.py` `original_headers` |
+| F18 | [A measurement that was never found is written as 0](#f18--a-measurement-that-was-never-found-is-written-as-0) | moderate | `result.py` `_write_overview` |
+| F19 | [The results table is saved without headers or row numbers](#f19--the-results-table-is-saved-without-headers-or-row-numbers) | moderate | `result.py` `_write_overview` |
+| F20 | [Peak-to-peak time ends up in the last column](#f20--peak-to-peak-time-ends-up-in-the-last-column) | minor | `result.py` `ORIGINAL_HEADERS` |
+| F21 | [Numbers are written with ImageJ's own formatting](#f21--numbers-are-written-with-imagejs-own-formatting) | cosmetic | `result.py` `_imagej_number` |
+| F22 | [The output file names mix conventions](#f22--the-output-file-names-mix-conventions) | cosmetic | `result.py` `file_names` |
+| F23 | [The speed comparison plot ends in a drop to zero](#f23--the-speed-comparison-plot-ends-in-a-drop-to-zero) | minor | `result.py` `comparison_curves` |
+| F24 | [Four result columns are gated by a drawing option](#f24--four-result-columns-are-gated-by-a-drawing-option) | minor | not reproduced |
 
 ---
 
@@ -187,12 +187,9 @@ which point the last frame they asked for is silently excluded.
 otherwise, and does nothing differently when `mask_end_frame` is `None` — matching the
 above. `test_legacy_stops_one_frame_early` pins it.
 
-Small in effect: one frame out of hundreds, contributing to a pixel-wise maximum that is
-then thresholded. It matters only if that particular frame held the largest excursion.
-
 ## F4 — The mask holds 255, not 1
 
-`pixelsOfInterest` line 674, applied in `getContractionData` line 697. See also F13, a
+`pixelsOfInterest` line 674, applied in `getContractionData` line 697. See also F6, a
 separate point about the average that follows.
 
 ```javascript
@@ -211,13 +208,12 @@ getStatistics(LFHnothing, LFHmean, LFHmin, LFHmax, LFHstdDev);
 image is multiplied by it directly rather than by a 0/1 indicator. Every masked trace is
 therefore scaled by 255.
 
-This is not really a bug — the units are arbitrary — but it must be reproduced exactly to
-match the original's numbers, and it is a trap for anyone comparing a masked run against an
-unmasked one and expecting the amplitudes to be commensurable.
+Not really a bug, since the units are arbitrary, but it has to be reproduced exactly to
+match the original's numbers.
 
 Note also that `getStatistics` runs on the multiplied image, whose mean is taken over the
 **whole frame** with excluded pixels counted as zero, not over the kept pixels. That is the
-separate point recorded as F13, and we reproduce it in both modes because it is a design
+separate point recorded as F6, and we reproduce it in both modes because it is a design
 choice rather than a mistake.
 
 **What boamotion does.** `_mask_weight` multiplies the boolean mask by `255.0` when
@@ -225,7 +221,7 @@ choice rather than a mistake.
 and `test_legacy_changes_nothing_without_a_mask` asserts the flag is inert when there is no
 mask to scale.
 
-## F5 — The peak threshold indexes the trace with a frame number
+## F9 — The peak threshold indexes the trace with a frame number
 
 `transientAnalysis`, lines 1009-1011.
 
@@ -254,7 +250,39 @@ takes the trace minimum otherwise. `test_the_legacy_zero_level_can_drop_a_genuin
 builds a train with one smaller beat and shows the original losing it while the
 corrected version keeps it.
 
-## F6 — A single detected peak loses its baseline
+## F10 — The peak window is a frame narrower than it reads
+
+`transientAnalysis`, lines 1021-1027.
+
+```javascript
+for(u=PeakDetectionWindow/2;u<yValues.length-1-PeakDetectionWindow/2;u++){
+    if((yValues[u]-perc0)>peakThresholdValue){
+        for(r=1;r<PeakDetectionWindow/2;r++){
+            if(yValues[u-r]>yValues[u] || yValues[u+r]>yValues[u]){
+                noMax=true;
+```
+
+**What happens.** The inner bound is strict, so with the default window of 20 a candidate is
+compared against its neighbours at `±1 … ±9` — a 19-point neighbourhood, not 20 or 21. A
+peak exactly 10 points from a higher one is therefore admitted.
+
+This is a definition detail rather than a mistake; "a window of 20 frames" centred on a point
+is inherently ambiguous. It is recorded because it must be matched exactly to reproduce the
+original's peak list, and because the obvious reading of the parameter is off by one.
+
+The outer bound has a firmer consequence: candidates in the first `peak_window/2` points, or
+the last `peak_window/2 + 1`, are never examined. A beat at the very start of a recording is
+invisible to the detector.
+
+**What boamotion does.** `_dominates_neighbours` compares the slice
+`[position - half + 1, position + half)`, matching the original in both modes: this is
+the definition of the parameter, and changing it would alter every peak list.
+`test_the_neighbourhood_reaches_one_point_less_far_than_the_window` shows a higher point
+10 away failing to displace a candidate where one 9 away succeeds, and
+`test_a_beat_near_the_end_of_the_trace_is_never_examined` shows the textbook window of
+18 losing the fourth beat of our synthetic recording.
+
+## F12 — A single detected peak loses its baseline
 
 `transientAnalysis`, lines 1047-1051.
 
@@ -315,7 +343,7 @@ or, if no point qualifies as flat, the lowest value before the peak.
 `0.0` and that the corrected mode returns a genuine resting value;
 `test_a_lone_peak_is_unaffected_in_the_high_frequency_mode` pins the other half.
 
-## F7 — A baseline shortage narrows every later beat
+## F13 — A baseline shortage narrows every later beat
 
 `transientAnalysis`, lines 1139-1167.
 
@@ -356,39 +384,7 @@ point in the search range when there are none.
 `test_a_baseline_shortage_narrows_every_later_beat` measures the same second beat against
 two traces differing only in the first, and gets 10.8 against 10.6.
 
-## F8 — The peak window is a frame narrower than it reads
-
-`transientAnalysis`, lines 1021-1027.
-
-```javascript
-for(u=PeakDetectionWindow/2;u<yValues.length-1-PeakDetectionWindow/2;u++){
-    if((yValues[u]-perc0)>peakThresholdValue){
-        for(r=1;r<PeakDetectionWindow/2;r++){
-            if(yValues[u-r]>yValues[u] || yValues[u+r]>yValues[u]){
-                noMax=true;
-```
-
-**What happens.** The inner bound is strict, so with the default window of 20 a candidate is
-compared against its neighbours at `±1 … ±9` — a 19-point neighbourhood, not 20 or 21. A
-peak exactly 10 points from a higher one is therefore admitted.
-
-This is a definition detail rather than a mistake; "a window of 20 frames" centred on a point
-is inherently ambiguous. It is recorded because it must be matched exactly to reproduce the
-original's peak list, and because the obvious reading of the parameter is off by one.
-
-The outer bound has a firmer consequence: candidates in the first `peak_window/2` points, or
-the last `peak_window/2 + 1`, are never examined. A beat at the very start of a recording is
-invisible to the detector.
-
-**What boamotion does.** `_dominates_neighbours` compares the slice
-`[position - half + 1, position + half)`, matching the original in both modes: this is
-the definition of the parameter, and changing it would alter every peak list.
-`test_the_neighbourhood_reaches_one_point_less_far_than_the_window` shows a higher point
-10 away failing to displace a candidate where one 9 away succeeds, and
-`test_a_beat_near_the_end_of_the_trace_is_never_examined` shows the textbook window of
-18 losing the fourth beat of our synthetic recording.
-
-## F9 — The first percentage defines three other measures
+## F14 — The first percentage defines three other measures
 
 `transientAnalysis`, lines 1187-1245. Included here because it looks like a bug and
 is not.
@@ -439,9 +435,7 @@ level is the lowest, which is the hardest to reach — any level above it crosse
 peak. So if the first level is found, all of them are. We therefore do not reproduce the
 stale value, and there is nothing to correct.
 
----
-
-## F15 — The duration column is labelled 10% whatever was used
+## F17 — The duration column is labelled 10% whatever was used
 
 `transientAnalysis`, line 1243.
 
@@ -452,14 +446,14 @@ setResult("Contraction duration [10% above baseline] (ms)", c, transientDuration
 **What happens.** The header is a literal string while `transientDuration` is measured at
 `percentages[0]`, whatever that is. The two agree only as long as the first level is 10%.
 
-This is F9 reaching the output: the first percentage quietly defines the measure, and here
+This is F14 reaching the output: the first percentage quietly defines the measure, and here
 it fails to define the label as well. Nothing warns a reader of the file.
 
 **What boamotion does.** `original_headers` writes the literal `10` when `legacy=True` and
 the level actually used otherwise. `test_the_duration_header_is_hard_coded_to_ten_percent_in_legacy_mode`
 pins both, using `percentages=(20, 50)` so the two disagree.
 
-## F16 — A measurement that was never found is written as 0
+## F18 — A measurement that was never found is written as 0
 
 `transientAnalysis`, lines 1220-1254.
 
@@ -488,7 +482,82 @@ from "measured as zero". `test_missing_measurements_are_written_as_zero_in_legac
 its corrected counterpart pin both.
 
 ---
-## F17 — The output file names mix conventions
+
+## F19 — The results table is saved without headers or row numbers
+
+Macro start, line 8, and the save at line 553.
+
+```javascript
+run("Input/Output...", "jpeg=100");
+...
+saveAs("Results", resultFile);
+```
+
+**What happens.** An ImageJ `run(...)` options string clears every checkbox it does not
+name. That one call sets the JPEG quality and, as a side effect, switches off *Save column
+headers* and *Save row numbers*. `Overview-results.txt` is therefore bare numbers: one line
+per beat, ten tab-separated columns, nothing saying what any of them is.
+
+Two consequences follow. A reader of the file has to know the column order to make sense of
+it, and F17 never reaches disk at all — the mislabelled header exists only in the Results
+window on screen.
+
+**What boamotion does.** `_write_overview` writes the file bare when `legacy=True`, which
+makes it byte-identical to the macro's. With `legacy=False` the headers and row numbers come
+back, since a results file nobody can read is a poor default.
+
+## F20 — Peak-to-peak time ends up in the last column
+
+`transientAnalysis`, lines 1262-1270.
+
+```javascript
+for(k=0;k<maxCount;k++){
+    ...
+    if(k>0){
+        setResult("Peak-to-peak time (ms)", k, (maxList[k]-maxList[k-1])*samplingTime);
+    }
+    setResult("Baseline value (a.u.)", k, minValueList[k]);
+    setResult("Peak amplitude (a.u.)", k, yValues[maxList[k]]);
+    setResult("Contraction amplitude (a.u.)", k, yValues[maxList[k]]-minValueList[k]);
+}
+```
+
+**What happens.** An ImageJ Results column is created the first time something is written to
+it, and the columns keep that creation order. Peak-to-peak time is written first in the loop
+body but skipped for `k=0`, because the first beat has no predecessor. So the three amplitude
+columns are created first, and peak-to-peak time is appended after them — the opposite of the
+order the code reads in.
+
+Combined with F19 this is worth knowing: the file has no headers, so the order *is* the only
+description of the data.
+
+**What boamotion does.** `ORIGINAL_HEADERS` lists peak-to-peak time last, in both modes. The
+order carries no meaning beyond matching the original.
+
+## F21 — Numbers are written with ImageJ's own formatting
+
+`writeFile`, line 837, against the results table save at line 553.
+
+```javascript
+print(f, xvalues[i]+"	"+yvalues[i]);
+```
+
+**What happens.** The trace files are built by string concatenation, and the macro language
+renders a number to four decimal places — unless it is whole, which prints bare, or unless
+the result would exceed nine digits, in which case decimals are dropped until it fits. So
+`10797.7061` keeps four decimals and `190330.953` keeps three. The results table goes through
+a different route and uses ImageJ's default of three decimals throughout.
+
+**What boamotion does.** `_imagej_number` applies both rules when `legacy=True`, so the files
+look exactly like the original's. With `legacy=False` the traces are written in full, since
+rounding on the way out only loses precision.
+
+Note what this does *not* buy. Float32 arithmetic accumulates in a different order than
+ImageJ's, so trace values still differ by around 4e-8 relative — enough to change the third
+decimal of a six-digit number. The trace files can never be compared as text; they have to be
+parsed and compared numerically.
+
+## F22 — The output file names mix conventions
 
 Lines 494, 532, 539 and 801.
 
@@ -513,9 +582,7 @@ diff against FIJI output lines up file for file, and lower-case hyphenated ones 
 `<name>-results` otherwise. `test_no_output_name_contains_a_space_or_bracket` pins the
 corrected side.
 
----
-
-## F22 — The speed comparison plot ends in a drop to zero
+## F23 — The speed comparison plot ends in a drop to zero
 
 `speedLinCompare`, lines 966-976.
 
@@ -544,78 +611,7 @@ artefact in it is worth knowing about.
 truncates to the same length; when `legacy=True` it then zeroes the final point of each, as
 the original leaves it. `test_legacy_leaves_both_comparison_curves_at_zero` pins both sides.
 
----
-
-## Divergences we accept
-
-Places where we knowingly do not match the original bit for bit, in either mode.
-
-**Ties in the ranking.** `Array.rankPositions` does not specify how equal values are
-ordered. We use `np.argsort(kind="stable")`, which keeps the earlier index first. Exact
-ties in a mean-of-absolute-differences over a whole frame need identical frames, so this
-should not arise with real camera noise.
-
-**`0/0` in the unity distance.** Two perfectly identical consecutive motion values give
-`0/0`, which is `NaN` in the macro and would propagate unpredictably through
-`rankPositions`. We map it to `0` — a pair with no motion at all sits exactly on the unity
-line, which is the sensible reading. Again, only reachable with noise-free frames, which is
-to say with synthetic recordings rather than real ones.
-
-**Gaussian blur** is not implemented (deferred, see `DECISIONS.md` section 4). It appears
-in most of the excerpts above and is skipped when reading them.
-
-## F23 — The results table is saved without headers or row numbers
-
-Macro start, line 8, and the save at line 553.
-
-```javascript
-run("Input/Output...", "jpeg=100");
-...
-saveAs("Results", resultFile);
-```
-
-**What happens.** An ImageJ `run(...)` options string clears every checkbox it does not
-name. That one call sets the JPEG quality and, as a side effect, switches off *Save column
-headers* and *Save row numbers*. `Overview-results.txt` is therefore bare numbers: one line
-per beat, ten tab-separated columns, nothing saying what any of them is.
-
-Two consequences follow. A reader of the file has to know the column order to make sense of
-it, and F15 never reaches disk at all — the mislabelled header exists only in the Results
-window on screen.
-
-**What boamotion does.** `_write_overview` writes the file bare when `legacy=True`, which
-makes it byte-identical to the macro's. With `legacy=False` the headers and row numbers come
-back, since a results file nobody can read is a poor default.
-
-## F24 — Peak-to-peak time ends up in the last column
-
-`transientAnalysis`, lines 1262-1270.
-
-```javascript
-for(k=0;k<maxCount;k++){
-    ...
-    if(k>0){
-        setResult("Peak-to-peak time (ms)", k, (maxList[k]-maxList[k-1])*samplingTime);
-    }
-    setResult("Baseline value (a.u.)", k, minValueList[k]);
-    setResult("Peak amplitude (a.u.)", k, yValues[maxList[k]]);
-    setResult("Contraction amplitude (a.u.)", k, yValues[maxList[k]]-minValueList[k]);
-}
-```
-
-**What happens.** An ImageJ Results column is created the first time something is written to
-it, and the columns keep that creation order. Peak-to-peak time is written first in the loop
-body but skipped for `k=0`, because the first beat has no predecessor. So the three amplitude
-columns are created first, and peak-to-peak time is appended after them — the opposite of the
-order the code reads in.
-
-Combined with F23 this is worth knowing: the file has no headers, so the order *is* the only
-description of the data.
-
-**What boamotion does.** `ORIGINAL_HEADERS` lists peak-to-peak time last, in both modes. The
-order carries no meaning beyond matching the original.
-
-## F25 — Four result columns are gated by a drawing option
+## F24 — Four result columns are gated by a drawing option
 
 `transientAnalysis`, line 1261.
 
@@ -636,25 +632,20 @@ in practice.
 **What boamotion does.** Nothing to reproduce: the measurements are computed and written
 regardless of what is drawn, and the figure is a separate concern from the table.
 
-## F26 — Numbers are written with ImageJ's own formatting
+## Divergences we accept
 
-`writeFile`, line 837, against the results table save at line 553.
+Places where we knowingly do not match the original bit for bit, in either mode.
 
-```javascript
-print(f, xvalues[i]+"	"+yvalues[i]);
-```
+**Ties in the ranking.** `Array.rankPositions` does not specify how equal values are
+ordered. We use `np.argsort(kind="stable")`, which keeps the earlier index first. Exact
+ties in a mean-of-absolute-differences over a whole frame need identical frames, so this
+should not arise with real camera noise.
 
-**What happens.** The trace files are built by string concatenation, and the macro language
-renders a number to four decimal places — unless it is whole, which prints bare, or unless
-the result would exceed nine digits, in which case decimals are dropped until it fits. So
-`10797.7061` keeps four decimals and `190330.953` keeps three. The results table goes through
-a different route and uses ImageJ's default of three decimals throughout.
+**`0/0` in the unity distance.** Two perfectly identical consecutive motion values give
+`0/0`, which is `NaN` in the macro and would propagate unpredictably through
+`rankPositions`. We map it to `0` — a pair with no motion at all sits exactly on the unity
+line, which is the sensible reading. Again, only reachable with noise-free frames, which is
+to say with synthetic recordings rather than real ones.
 
-**What boamotion does.** `_imagej_number` applies both rules when `legacy=True`, so the files
-look exactly like the original's. With `legacy=False` the traces are written in full, since
-rounding on the way out only loses precision.
-
-Note what this does *not* buy. Float32 arithmetic accumulates in a different order than
-ImageJ's, so trace values still differ by around 4e-8 relative — enough to change the third
-decimal of a six-digit number. The trace files can never be compared as text; they have to be
-parsed and compared numerically.
+**Gaussian blur** is not implemented (deferred, see `DECISIONS.md` section 4). It appears
+in most of the excerpts above and is skipped when reading them.

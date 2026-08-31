@@ -6,10 +6,8 @@ measures each one. It is a Python port of the
 [MUSCLEMOTION](https://github.com/l-sala/MUSCLEMOTION) ImageJ/FIJI macro, meant to be run
 from a notebook or a script rather than a GUI.
 
-**Status: prototype complete, validated on synthetic recordings only.** Every stage of the
-analysis is implemented and tested, and a run reproduces the original macro's own FIJI
-output on a synthetic recording, table for table. It has not yet been checked on a real
-recording, so the numbers should not be relied on yet.
+**Status: prototype complete, validated on synthetic recordings only.** It has not yet been
+checked against a real recording, so the numbers should not be relied on yet.
 
 ## Where to start
 

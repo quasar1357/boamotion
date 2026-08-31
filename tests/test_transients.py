@@ -70,7 +70,7 @@ def test_a_taller_threshold_drops_the_smaller_beats():
     ]
 
 
-# --- the two ways the peak window is narrower than it reads (F12) ---------------------
+# --- the two ways the peak window is narrower than it reads (F10) ---------------------
 
 
 def test_the_neighbourhood_reaches_one_point_less_far_than_the_window():
@@ -94,7 +94,7 @@ def test_a_beat_near_the_end_of_the_trace_is_never_examined():
     assert find_peaks(trace, reference_frame=0, peak_window=16).tolist() == expected
 
 
-# --- the legacy zero level (F3) ------------------------------------------------------
+# --- the legacy zero level (F9) ------------------------------------------------------
 
 
 def test_the_legacy_zero_level_can_drop_a_genuine_beat():
@@ -203,7 +203,7 @@ def test_baselines_are_reported(caplog):
     assert "Baselines for 4 beat(s)" in caplog.text
 
 
-# --- a lone peak loses its baseline (F4) ---------------------------------------------
+# --- a lone peak loses its baseline (F12) ---------------------------------------------
 
 
 def test_a_lone_peak_gets_a_zero_baseline_in_legacy_mode():
@@ -352,7 +352,7 @@ def test_amplitude_is_measured_above_the_baseline_it_is_given():
     assert table["peak_amplitude"].tolist() == [100.0] * 4
 
 
-# --- one percentage defines three other measures (F9) --------------------------------
+# --- one percentage defines three other measures (F14) --------------------------------
 
 
 def test_the_first_percentage_defines_the_headline_measures():

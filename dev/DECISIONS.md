@@ -34,7 +34,7 @@ rejected because COBRApy is a well-known package in the same scientific-Python s
 The prototype's acceptance criterion is "same numbers as FIJI". Several genuine bugs in
 the original (section 3) change those numbers. Both behaviours are implemented and tested,
 behind a single `legacy` switch: `legacy=True` reproduces the original exactly, and
-`legacy=False` corrects every finding except F8 and F9.
+`legacy=False` corrects every finding except F10 and F14.
 
 `legacy=False` is the default. The match against FIJI is what the switch exists to make
 demonstrable, and it has been demonstrated — every value agrees, and the traces to within
@@ -51,7 +51,7 @@ worth stating plainly, and it is why every finding is listed individually in sec
 ### D4 — Reimplement the original's algorithms rather than substituting library equivalents · *taken*
 
 Where the macro has a bespoke algorithm (peak detection, baseline finding, flank
-crossings), we port it literally instead of calling a standard library function. See F10
+crossings), we port it literally instead of calling a standard library function. See F26
 for why this matters.
 
 ### D5 — No video display; no viewer dependency · *proposed*
@@ -220,18 +220,15 @@ finding in [`how-it-works.md`](../docs/how-it-works.md) and in
 so a finding can be followed from its consequence here, to its plain-language description
 there, to the original source and the mechanism worked through line by line.
 
-They are ordered by how much there is to do about them: first the ones we treat as
-mistakes and correct, then the ones we keep although a better option exists, and last
-the ones that are simply observations, where nothing is wrong and nothing is proposed.
+They are grouped by how much there is to do about them: the ones we treat as mistakes and
+correct, the ones we keep although a better option exists, the ones we reproduce as they
+are, and the two we neither correct nor copy. Within a group the numbers ascend, and **the
+number is the order the analysis meets the finding** — reference frame, mask, traces,
+transients, output — so a higher number means a later stage, not a later discovery.
 
-*To settle at the final overhaul:* these groups have grown organically and two items sit
-awkwardly. F12 is filed under "reproduced as they are" although we do the opposite — we
-replaced the preference store outright, judging it not worth reproducing, which is a
-fourth category of its own. F13 and F14 belong under "kept, though a better option
-exists". F10 is not macro behaviour at all and would sit better inside D4. Separately, **the quirks
-of the original's implementation** — F1 to F9 and F15 onwards — each have a section of
-their own number in `LEGACY_MODE.md`; F10 to F14 are observations of another kind and
-have none.
+Every finding in the first and third groups has a section of its own number in
+`LEGACY_MODE.md`, except F16, which is a naming convention rather than code. The others are
+observations, and have none.
 
 | F | Finding | Impact |
 |---|---|---|
@@ -240,30 +237,31 @@ have none.
 | F2 | The search start is not added back to the frame number | minor |
 | F3 | An explicitly set mask end frame excludes itself | minor |
 | F4 | The mask holds 255 rather than 1 | constant factor |
-| F5 | The peak threshold uses an arbitrary sample of the trace | moderate |
-| F6 | A single detected peak loses its baseline | edge case |
-| F7 | A baseline shortage narrows every later beat | moderate |
-| F15 | The contraction-duration column is labelled 10% whatever was used | moderate |
-| F16 | A measurement that could not be found is written as 0 | moderate |
-| F17 | The output file names mix conventions | cosmetic |
-| F22 | The speed comparison plot ends in a drop to zero | minor |
-| F23 | The results table has no headers and no row numbers | moderate |
-| F26 | Numbers are written with ImageJ's own formatting | cosmetic |
+| F9 | The peak threshold uses an arbitrary sample of the trace | moderate |
+| F12 | A single detected peak loses its baseline | edge case |
+| F13 | A baseline shortage narrows every later beat | moderate |
+| F17 | The contraction-duration column is labelled 10% whatever was used | moderate |
+| F18 | A measurement that could not be found is written as 0 | moderate |
+| F19 | The results table has no headers and no row numbers | moderate |
+| F21 | Numbers are written with ImageJ's own formatting | cosmetic |
+| F22 | The output file names mix conventions | cosmetic |
+| F23 | The speed comparison plot ends in a drop to zero | minor |
 | | **Kept, though a better option exists** | |
-| F18 | The mask threshold is fixed at mean + 1 SD | moderate |
-| F19 | The three-point noise guard is not adjustable | moderate |
-| F20 | The reference frame is dropped rather than accounted for | minor |
-| F21 | Peak detection is the macro's own, not a library algorithm | minor |
+| F5 | The mask threshold is fixed at mean + 1 SD | moderate |
+| F6 | Masked amplitudes depend on how much of the frame the mask keeps | by design |
+| F7 | The reference frame is dropped rather than accounted for | minor |
+| F8 | The time axis closes the gap left by the reference frame | minor |
+| F11 | Peak detection is the macro's own, not a library algorithm | minor |
+| F15 | The three-point noise guard is not adjustable | moderate |
 | | **Reproduced as they are** | |
-| F8 | The peak window is one frame narrower than it reads | minor |
-| F9 | The first percentage silently defines three other measures | by design |
-| F10 | Why the earlier Python attempt gave different results | — |
-| F11 | Percentage columns are named by `100 - percentage` | convention |
-| F12 | Settings live in ImageJ's global preferences | workflow |
-| F13 | Masked amplitudes depend on how much of the frame the mask keeps | by design |
-| F14 | The time axis closes the gap left by the reference frame | minor |
-| F24 | Peak-to-peak time is the last column, not the seventh | convention |
-| F25 | A drawing option also decides whether four measurements are recorded | trap |
+| F10 | The peak window is one frame narrower than it reads | minor |
+| F14 | The first percentage silently defines three other measures | by design |
+| F16 | Percentage columns are named by `100 - percentage` | convention |
+| F20 | Peak-to-peak time is the last column, not the seventh | convention |
+| F24 | A drawing option also decides whether four measurements are recorded | trap |
+| | **Not reproduced at all** | |
+| F25 | Settings live in ImageJ's global preferences | workflow |
+| F26 | Why the earlier Python attempt gave different results | — |
 
 ### Corrected by `legacy=False`
 
@@ -321,13 +319,13 @@ so every masked trace is scaled by 255. Harmless in itself, since the units are 
 but it has to be reproduced exactly to match the original's numbers, and it means masked and
 unmasked amplitudes from the original are not directly comparable.
 
-#### F5 — The peak threshold uses an arbitrary trace sample · *moderate*
+#### F9 — The peak threshold uses an arbitrary trace sample · *moderate*
 
 The global peak-amplitude threshold takes its zero point from `yValues[referenceFrameSlice]`
 — indexing the *contraction trace* with a *frame number*. The intent is "the baseline is
 near zero", but the value actually used is an arbitrary sample of the trace.
 
-#### F6 — A single detected peak loses its baseline · *edge case*
+#### F12 — A single detected peak loses its baseline · *edge case*
 
 If the detector finds exactly one peak, the code appends a literal `false` (i.e. 0) to the
 peak list to make later array arithmetic work. The result table is written per *detected*
@@ -343,7 +341,7 @@ height above rest. The flank crossings are also searched over a wider range than
 With `high_freq_baseline = True` the baseline is unaffected. Relevant to short or slowly
 beating recordings, and to any recording where the peak threshold admits only one beat.
 
-#### F7 — One beat with too few baseline points narrows all the later ones · *moderate*
+#### F13 — One beat with too few baseline points narrows all the later ones · *moderate*
 
 This applies only to the flat-baseline mode (`high_freq_baseline = False`). When a beat does
 not offer enough flat points to average, the macro reduces the number of points to average —
@@ -361,18 +359,21 @@ The printed warning names the beat that triggered the reduction but not the ones
 `high_freq_baseline = True`, which we believe is the client's setting, is unaffected — worth
 confirming (see Q3).
 
-#### F15 — The contraction-duration column is labelled 10% whatever level was used · *moderate*
+#### F17 — The contraction-duration column is labelled 10% whatever level was used · *moderate*
 
 The header of that column is a hard-coded string, `Contraction duration [10% above baseline]
 (ms)`, while the number beneath it is measured at whatever the *first* percentage happens to
 be. Choose levels starting at 20% and the column still claims 10%.
 
-**Consequence:** this is F9 surfacing in the output. As long as the list starts at 10% the
+**Consequence:** this is F14 surfacing in the output. As long as the list starts at 10% the
 header is accurate, which is why it goes unnoticed; change the first level and the results
 file misstates what was measured, with nothing to warn a later reader. Corrected by
 `legacy=False`, which writes the level actually used.
 
-#### F16 — A measurement that could not be found is written as 0 · *moderate*
+**Observed in FIJI.** With the levels set to 30, 50 and 80 the macro still labels the column
+`[10% above baseline]`, while the duration beneath it is the one measured at 30%.
+
+#### F18 — A measurement that could not be found is written as 0 · *moderate*
 
 When a crossing cannot be located, the macro sets the measurement to `false`, and its results
 table records that as the number **0**. A relaxation time that could not be measured is
@@ -384,7 +385,7 @@ falls outside the search range. Anyone averaging a column across beats silently 
 zeros and gets a value pulled toward zero. Corrected by `legacy=False`, which leaves the cell
 empty so the two can be told apart.
 
-#### F23 — The results table has no headers and no row numbers · *moderate*
+#### F19 — The results table has no headers and no row numbers · *moderate*
 
 `Overview-results.txt` is bare numbers: one line per beat, ten tab-separated columns, and
 nothing that says what any column is. The cause is a single call at the top of the macro,
@@ -394,10 +395,10 @@ and *Save row numbers* as a side effect.
 
 **Consequence:** the file cannot be read without knowing the column order in advance, and
 anything that reads it positionally breaks silently if a percentage level is added or
-removed. It also means F15 never reaches disk: the mislabelled header exists only on
+removed. It also means F17 never reaches disk: the mislabelled header exists only on
 screen. Corrected by `legacy=False`, which writes headers and row numbers.
 
-#### F26 — Numbers are written with ImageJ's own formatting · *cosmetic*
+#### F21 — Numbers are written with ImageJ's own formatting · *cosmetic*
 
 The trace files hold four decimal places, except that whole numbers print bare and any
 value that would exceed nine digits loses decimals until it fits. The results table uses
@@ -410,7 +411,7 @@ accumulates in a different order here than in ImageJ, so trace values differ by 
 of the trace files is therefore not meaningful; they have to be parsed and compared with
 a tolerance. Corrected by `legacy=False`, which writes the values in full.
 
-#### F17 — The output file names mix conventions · *cosmetic*
+#### F22 — The output file names mix conventions · *cosmetic*
 
 The original writes `contraction.txt` and `speed-of-contraction.txt` in lower case, but
 `Contraction.jpg`, `Speed of contraction.jpg` and
@@ -422,7 +423,7 @@ handle from a shell, which matters once results are moved around on a cluster. `
 reproduces the original names exactly, which is what a diff against FIJI output needs;
 `legacy=False` writes lower-case hyphenated names into `<name>-results`.
 
-#### F22 — The speed comparison plot ends in a drop to zero · *minor*
+#### F23 — The speed comparison plot ends in a drop to zero · *minor*
 
 Before the measured and calculated speed are plotted against each other, both are scaled to
 0-1. The loop that does the scaling stops one element short of the arrays it fills, so the
@@ -439,7 +440,7 @@ whether the measurement is behaving. Corrected by `legacy=False`.
 Reproduced faithfully, and defensible as they stand, but an improvement is available if the
 client ever wants it. None is behind `legacy`, because none is a mistake.
 
-#### F18 — The mask threshold is fixed at mean + 1 standard deviation · *moderate*
+#### F5 — The mask threshold is fixed at mean + 1 standard deviation · *moderate*
 
 The pixel mask keeps whatever exceeds `mean + 1 SD` of the maximum-change map. That
 multiplier is not exposed anywhere, so the only way to change how much of the frame is kept
@@ -450,7 +451,53 @@ map is usually strongly bimodal, so Otsu's method would adapt to sparse or crowd
 without a magic number. Worth revisiting if tissue occupies very little of the frame, where
 1 SD may keep too much background.
 
-#### F19 — The three-point noise guard is not adjustable · *moderate*
+#### F6 — Masked amplitudes depend on how much of the frame the mask keeps
+
+The mask is applied by multiplying the difference image, but the average that follows is
+taken over the *whole* frame rather than over the kept pixels. A mask covering a tenth of
+the frame therefore produces amplitudes roughly a tenth of the average change in the
+moving region.
+
+**Consequence:** contraction amplitudes are not comparable between recordings whose masks
+differ in coverage — the same tissue filling less of the field reads as a smaller
+contraction. Timing measures are unaffected. This is design rather than a bug, so we
+reproduce it in both modes.
+
+#### F7 — The reference frame is dropped rather than accounted for · *minor*
+
+The reference frame is removed from the recording before measuring, so it has no point in
+either trace. That is reasonable — its contraction value would be exactly zero by
+construction, which is not a measurement — but it leaves a gap that later code has to
+remember, and F8 is the consequence of forgetting it.
+
+**A better option:** keep the point and mark it, or keep a frame-number axis alongside the
+trace, so nothing downstream has to reason about the gap. We reproduce the removal because
+every trace index in the original's output depends on it.
+
+#### F8 — The time axis closes the gap left by the reference frame
+
+The reference frame is removed from the stack before measuring, so the traces hold one
+point fewer than the recording. The two trace points either side of it are still adjacent
+in the trace but two sampling intervals apart in the recording — with frame 5 as
+reference, trace points 3 and 4 are frames 4 and 6. The time axis adds one interval per
+point regardless, so that step is drawn half its true length.
+
+**Consequence:** every point after the reference frame is placed one frame too early.
+Durations measured between two points are unaffected, since the shift cancels; absolute
+peak times after the reference are off by one frame. Small, and smaller still because the
+reference is usually near the start of the recording.
+
+#### F11 — Peak detection is the macro's own algorithm, not a library one · *minor*
+
+Peaks are found with a sliding-window maximum plus a height threshold, rather than with
+`scipy.signal.find_peaks` and a prominence criterion. See D4: we ported it deliberately,
+because substituting it is exactly what made the earlier Python attempt disagree (F26).
+
+**A better option:** prominence-based detection copes better with a drifting baseline, and
+needs less tuning per recording. Worth offering as an alternative once the port is validated
+— but only as an option, never as a silent replacement.
+
+#### F15 — The three-point noise guard is not adjustable · *moderate*
 
 A flank crossing requires three consecutive points beyond the level. At the 60-75 fps the
 manual asks for, three points span 40-50 ms and the rule is a sensible noise filter. At the
@@ -460,35 +507,14 @@ crossing outward and so lengthens the durations measured from it.
 **A better option:** make the count a parameter, or derive it from the frame rate. See Q1 —
 this is a second reason the frame rate matters beyond timing resolution.
 
-#### F20 — The reference frame is dropped rather than accounted for · *minor*
-
-The reference frame is removed from the recording before measuring, so it has no point in
-either trace. That is reasonable — its contraction value would be exactly zero by
-construction, which is not a measurement — but it leaves a gap that later code has to
-remember, and F14 is the consequence of forgetting it.
-
-**A better option:** keep the point and mark it, or keep a frame-number axis alongside the
-trace, so nothing downstream has to reason about the gap. We reproduce the removal because
-every trace index in the original's output depends on it.
-
-#### F21 — Peak detection is the macro's own algorithm, not a library one · *minor*
-
-Peaks are found with a sliding-window maximum plus a height threshold, rather than with
-`scipy.signal.find_peaks` and a prominence criterion. See D4: we ported it deliberately,
-because substituting it is exactly what made the earlier Python attempt disagree (F10).
-
-**A better option:** prominence-based detection copes better with a drifting baseline, and
-needs less tuning per recording. Worth offering as an alternative once the port is validated
-— but only as an option, never as a silent replacement.
-
 ### Reproduced as they are
 
-Behaviour we do not correct in either mode. F8 and F9 are implementation quirks like those
+Behaviour we do not correct in either mode. F10 and F14 are implementation quirks like those
 above — they are documented in `LEGACY_MODE.md` too — but they are definitions rather than
-mistakes, and changing them would silently alter every result. The rest concern a naming
-convention, the original's workflow, someone else's port, or a deliberate design choice.
+mistakes, and changing them would silently alter every result. The rest are a naming
+convention and two details of how the original's own output came to look as it does.
 
-#### F8 — The peak detection window is one frame narrower than it reads · *minor*
+#### F10 — The peak detection window is one frame narrower than it reads · *minor*
 
 A candidate is compared against its neighbours out to `peak_window/2 - 1` on each side, so
 the default of 20 examines a 19-point neighbourhood. A peak exactly 10 points away from a
@@ -501,7 +527,7 @@ A firmer consequence of the same loop: candidates within `peak_window/2` of the 
 trace, or `peak_window/2 + 1` of its end, are never examined at all. **A beat at the very
 start of a recording cannot be detected.** With the default that is the first ten points.
 
-#### F9 — The first selected percentage silently defines three other measures
+#### F14 — The first selected percentage silently defines three other measures
 
 The chosen percentage levels look like an independent list of extra outputs, but the
 *first* one does more: its crossing points on the two flanks are what "time-to-peak",
@@ -511,7 +537,44 @@ column name does say — but deselecting 10% would silently change the definitio
 headline measures. We keep the behaviour, require the levels to be given in ascending
 order, and document it.
 
-#### F10 — Why the earlier Python attempt gave different results
+#### F16 — Column naming convention
+
+Percentage output columns are named by `100 - percentage`, so selecting 10% produces a
+column called "90-to-90 transient (ms)". Confusing at first sight, but it matches the CD90
+convention used in the field. We will keep it and document it.
+
+#### F20 — Peak-to-peak time is the last column, not the seventh
+
+An ImageJ Results column is created the first time a value is written to it, and keeps
+that position. Peak-to-peak time is written first in the loop body but skipped for the
+first beat, which has no predecessor — so the three amplitude columns are created ahead of
+it and it lands last, the opposite of the order the code reads in.
+
+**Consequence:** only that the column order has to be taken from the output rather than
+from the source. Given F19, that order is the file's only description of itself.
+
+#### F24 — A drawing option also decides whether four measurements are recorded
+
+`drawPeaks` controls whether peak markers are drawn on the contraction figure. The same
+block fills the baseline, peak amplitude, contraction amplitude and peak-to-peak columns,
+so switching off an annotation would remove four measurements from the results table.
+
+**Consequence:** none in practice — the flag is hard-wired to `true` and no dialog exposes
+it. Worth recording because it would be a trap for anyone extending the macro. `boamotion`
+keeps the two separate: what is measured does not depend on what is drawn.
+
+### Not reproduced at all
+
+Neither corrected nor copied: one is a workflow we replaced outright, the other is not the
+macro's behaviour in the first place.
+
+#### F25 — Settings are stored in ImageJ's global preferences
+
+The macro remembers the last-used settings across sessions in ImageJ's preference store.
+Convenient, but it means an analysis cannot be reproduced from its outputs alone, and
+settings leak between unrelated projects. See D6.
+
+#### F26 — Why the earlier Python attempt gave different results
 
 The client's colleague attributed the discrepancy to OpenCV versus FIJI arithmetic. That
 is almost certainly not the cause — `cv2.absdiff` on 32-bit floats is identical to numpy's
@@ -522,63 +585,6 @@ criterion instead of the macro's sliding-window-and-threshold rule; and flank cr
 use a different rule than the macro's "three consecutive points beyond the level". The
 reference frame is also never removed from the stack, which the macro does. This is the
 direct justification for D4.
-
-#### F24 — Peak-to-peak time is the last column, not the seventh
-
-An ImageJ Results column is created the first time a value is written to it, and keeps
-that position. Peak-to-peak time is written first in the loop body but skipped for the
-first beat, which has no predecessor — so the three amplitude columns are created ahead of
-it and it lands last, the opposite of the order the code reads in.
-
-**Consequence:** only that the column order has to be taken from the output rather than
-from the source. Given F23, that order is the file's only description of itself.
-
-#### F25 — A drawing option also decides whether four measurements are recorded
-
-`drawPeaks` controls whether peak markers are drawn on the contraction figure. The same
-block fills the baseline, peak amplitude, contraction amplitude and peak-to-peak columns,
-so switching off an annotation would remove four measurements from the results table.
-
-**Consequence:** none in practice — the flag is hard-wired to `true` and no dialog exposes
-it. Worth recording because it would be a trap for anyone extending the macro. `boamotion`
-keeps the two separate: what is measured does not depend on what is drawn.
-
-#### F11 — Column naming convention
-
-Percentage output columns are named by `100 - percentage`, so selecting 10% produces a
-column called "90-to-90 transient (ms)". Confusing at first sight, but it matches the CD90
-convention used in the field. We will keep it and document it.
-
-#### F12 — Settings are stored in ImageJ's global preferences
-
-The macro remembers the last-used settings across sessions in ImageJ's preference store.
-Convenient, but it means an analysis cannot be reproduced from its outputs alone, and
-settings leak between unrelated projects. See D6.
-
-#### F13 — Masked amplitudes depend on how much of the frame the mask keeps
-
-The mask is applied by multiplying the difference image, but the average that follows is
-taken over the *whole* frame rather than over the kept pixels. A mask covering a tenth of
-the frame therefore produces amplitudes roughly a tenth of the average change in the
-moving region.
-
-**Consequence:** contraction amplitudes are not comparable between recordings whose masks
-differ in coverage — the same tissue filling less of the field reads as a smaller
-contraction. Timing measures are unaffected. This is design rather than a bug, so we
-reproduce it in both modes.
-
-#### F14 — The time axis closes the gap left by the reference frame
-
-The reference frame is removed from the stack before measuring, so the traces hold one
-point fewer than the recording. The two trace points either side of it are still adjacent
-in the trace but two sampling intervals apart in the recording — with frame 5 as
-reference, trace points 3 and 4 are frames 4 and 6. The time axis adds one interval per
-point regardless, so that step is drawn half its true length.
-
-**Consequence:** every point after the reference frame is placed one frame too early.
-Durations measured between two points are unaffected, since the shift cancels; absolute
-peak times after the reference are off by one frame. Small, and smaller still because the
-reference is usually near the start of the recording.
 
 ---
 
