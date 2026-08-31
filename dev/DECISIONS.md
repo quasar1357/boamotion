@@ -228,9 +228,10 @@ the ones that are simply observations, where nothing is wrong and nothing is pro
 awkwardly. F12 is filed under "reproduced as they are" although we do the opposite — we
 replaced the preference store outright, judging it not worth reproducing, which is a
 fourth category of its own. F13 and F14 belong under "kept, though a better option
-exists". F10 is not macro behaviour at all and would sit better inside D4. Separately, **F1 to F9 are quirks of the original's implementation**
-and each has a section of its own number in `LEGACY_MODE.md`; F10 to F14 are observations of
-another kind and have none.
+exists". F10 is not macro behaviour at all and would sit better inside D4. Separately, **the quirks
+of the original's implementation** — F1 to F9 and F15 onwards — each have a section of
+their own number in `LEGACY_MODE.md`; F10 to F14 are observations of another kind and
+have none.
 
 | F | Finding | Impact |
 |---|---|---|
@@ -246,6 +247,8 @@ another kind and have none.
 | F16 | A measurement that could not be found is written as 0 | moderate |
 | F17 | The output file names mix conventions | cosmetic |
 | F22 | The speed comparison plot ends in a drop to zero | minor |
+| F23 | The results table has no headers and no row numbers | moderate |
+| F26 | Numbers are written with ImageJ's own formatting | cosmetic |
 | | **Kept, though a better option exists** | |
 | F18 | The mask threshold is fixed at mean + 1 SD | moderate |
 | F19 | The three-point noise guard is not adjustable | moderate |
@@ -259,6 +262,8 @@ another kind and have none.
 | F12 | Settings live in ImageJ's global preferences | workflow |
 | F13 | Masked amplitudes depend on how much of the frame the mask keeps | by design |
 | F14 | The time axis closes the gap left by the reference frame | minor |
+| F24 | Peak-to-peak time is the last column, not the seventh | convention |
+| F25 | A drawing option also decides whether four measurements are recorded | trap |
 
 ### Corrected by `legacy=False`
 
@@ -591,4 +596,5 @@ Agreed as out of prototype scope, listed so nothing is lost:
 - SLURM / cluster integration.
 - Performance work: chunked or parallel reading, and any per-recording parallelism (D9).
 - Drift and artefact correction.
-- User documentation.
+- The published documentation site. The prototype ships written documentation; building
+  it into a book is deferred (step 23).

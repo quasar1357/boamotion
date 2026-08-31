@@ -8,10 +8,10 @@ ImageJ/FIJI macro that quantifies muscle contraction from video microscopy.
 The goal is to reproduce the original tool's analysis faithfully while making it usable
 from a notebook or a script, without FIJI and without a GUI.
 
-**Status: prototype complete, not yet validated.** Every stage of the analysis is
-implemented and tested, and a run produces the same set of output files as the original.
-It has not yet been checked against real FIJI output on a real recording, so the numbers
-should not be relied on.
+**Status: prototype complete, validated on synthetic recordings only.** Every stage of the
+analysis is implemented and tested, and a run reproduces the original macro's own FIJI
+output on a synthetic recording, table for table. It has not yet been checked on a real
+recording, so the numbers should not be relied on yet.
 
 ## Development setup
 
@@ -28,9 +28,11 @@ from `pyproject.toml`. A virtual environment works equally well: `pip install -e
 
 How to use it, in [`docs/`](docs):
 
+- [`index.md`](docs/index.md) — what BoaMotion is and where to start.
+- [`installation.md`](docs/installation.md) — what you need and how to get it.
+- [`demo.ipynb`](docs/demo.ipynb) — running BoaMotion end to end.
 - [`how-it-works.md`](docs/how-it-works.md) — what the analysis computes and what each
   parameter changes.
-- [`demo.ipynb`](docs/demo.ipynb) — running BoaMotion end to end.
 
 How it was built, in [`dev/`](dev):
 

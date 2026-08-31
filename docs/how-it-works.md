@@ -181,7 +181,9 @@ The F numbers are shared with [`DECISIONS.md`](../dev/DECISIONS.md), which recor
 means for results, and with [`LEGACY_MODE.md`](../dev/LEGACY_MODE.md), which shows the
 original source and works the mechanism through.
 They follow the analysis from the reference frame through to the transients, rather than
-running in order of importance — see the closing paragraph for that.
+running in order of importance — see the closing paragraph for that. Listed here is what
+changes a number or a file you read; `DECISIONS.md` carries the complete set, including
+the ones we reproduce in both modes.
 
 **F1 — The unity-line filter never runs.** In the reference-frame detection, the array
 holding the unity-line scores is allocated with `n_low_values` entries but the loop that
@@ -245,6 +247,18 @@ was measured.
 located is stored as `false`, which the results table records as zero — indistinguishable from
 a genuine measurement of zero. Averaging such a column pulls the answer toward zero.
 
+**F23 — The results table is written without headers or row numbers.** One call at the
+top of the macro sets the JPEG quality, and because an ImageJ options string clears every
+checkbox it does not name, it switches off *Save column headers* and *Save row numbers*
+as a side effect. `Overview-results.txt` is therefore bare numbers, readable only by
+someone who already knows the column order — and anything reading it by position breaks
+silently when a percentage level is added or removed. It is also why F15 never reaches
+disk: the mislabelled header exists only on screen.
+
+**F26 — Numbers are written with ImageJ's own formatting.** Four decimal places in the
+trace files and three in the results table, whole numbers printed bare, and any value
+past nine digits losing decimals until it fits. `legacy=False` writes them in full.
+
 **F17 — The output file names mix conventions.** Lower-case text files, capitalised
 images, spaces and brackets in one of them. No effect on any number; `legacy=False`
 writes lower-case hyphenated names instead.
@@ -256,4 +270,5 @@ figure ends in a vertical drop that is not in the data.
 In practice F1 and F5 can genuinely change results, and F7 matters whenever the
 flat-baseline mode is used. F2 shifts numbers slightly, F3 and F6 affect edge cases only,
 F4 is a constant factor, F8 changes which beats are found at the ends of a recording, and
-F9 depends on which percentage levels are selected.
+F9 depends on which percentage levels are selected. F15, F16, F17, F22, F23 and F26 change
+how results are written and drawn rather than what was measured.

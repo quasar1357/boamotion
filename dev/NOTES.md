@@ -13,17 +13,19 @@ Findings carry an F number that means the same thing in all three.
 
 ## Source material
 
-All under `../` (the folder containing this repo):
+All in the project folder that sits outside this repo,
+`OneDrive - Universitaet Bern/MuscleMotion/`. The first five are in its
+`MUSCLEMOTION/` subfolder, the last two beside it:
 
-| File | Notes |
-|---|---|
-| `MUSCLEMOTION v1-1beta.ijm` | Authoritative source for the port. |
-| `MUSCLEMOTION v1.0.ijm` | Algorithmically identical to the beta; ignore. |
-| `MUSCLEMOTION User Manual v1.0.pdf` | 12 pages; rationale and parameter guidance. |
-| `sala-et-al-2017-musclemotion.pdf` | The paper. Figure S4 covers reference-frame detection. |
-| `AChanda_MuscleMotion_version_python.py` | Earlier partial Python attempt; cross-check only. |
-| `MuscleMotion_GUI-with-params.png` | Client's last-used transient-analysis settings. |
-| `MuscleMotion_Emails.txt` | Client correspondence and agreed prototype scope. |
+| File                                     | Notes                                                  |
+| ---------------------------------------- | ------------------------------------------------------ |
+| `MUSCLEMOTION v1-1beta.ijm`              | Authoritative source for the port.                     |
+| `MUSCLEMOTION v1.0.ijm`                  | Algorithmically identical to the beta; ignore.         |
+| `MUSCLEMOTION User Manual v1.0.pdf`      | 12 pages; rationale and parameter guidance.            |
+| `sala-et-al-2017-musclemotion.pdf`       | The paper. Figure S4 covers reference-frame detection. |
+| `AChanda_MuscleMotion_version_python.py` | Earlier partial Python attempt; cross-check only.      |
+| `MuscleMotion_GUI-with-params.png`       | Client's last-used transient-analysis settings.        |
+| `MuscleMotion_Emails.txt`                | Client correspondence and agreed prototype scope.      |
 
 The two `.ijm` versions differ only in 38 lines where array lengths are hoisted into a
 temporary before `newArray(...)`. No behavioural difference.
@@ -93,7 +95,7 @@ Applied from the start so the cluster route stays open without doing cluster wor
 - The client's dialog-1 answers are unknown, but they do not decide the diff: both sides
   can simply be run with the same settings. What was asked instead is whether Gaussian
   blur or cropping are part of their routine, since those two alone are unimplemented
-  (step 17) — noise reduction and a manually chosen reference frame are already settings.
+  (step 18) — noise reduction and a manually chosen reference frame are already settings.
 
 ## Frame ordering in image sequences
 
@@ -113,46 +115,62 @@ One reviewable commit per step, grouping what belongs together. Notebook updates
 usually their own commit, except when a code change forces them — a rename has to carry
 the notebook with it or the repo is inconsistent at that commit.
 
-| | Step | |
-|---|---|---|
-| **A** | 1 Repo, licence, NOTES, DECISIONS | done |
-| | 2 Packaging, src layout, ruff | done |
-| | 3 GitHub Actions CI | done |
-| **B** | 4 `Params` | done |
-| | 5 TIFF sequence loader | done |
-| | 6 Synthetic recording | done |
-| **C** | 7 `detect_reference_frame` | done |
-| | 8 `build_motion_pixel_mask` | done |
-| | 9 `measure_contraction`, `measure_speed` | done |
-| | 10a `find_peaks` and `find_baselines` | done |
-| | 10b `measure_transients` — levels, flank crossings, per-beat table | done |
-| **D** | 11 `Result` object and the output files | done |
-| | 12 The three figures | done |
-| | 13 `Boa`, the user-facing class, and logging | done |
-| **E** | 14 Validation against FIJI output | synthetic done, real data pending |
-| | 15 Example notebook on the client's recording | needs data |
-| | 14b `validation/`: read the macro's log back, compare the tables numerically | done |
-| | — prototype complete — | |
-| **F** | 16 Other input formats: TIFF stacks, PNG, AVI | |
-| | 17 Gaussian blur, ROI, interactive reference picking | |
-| | 18 Batch driver and CLI | |
-| | 19 SLURM array job | |
-| | 20 Performance work, if profiling justifies it | |
-| | 21 The original's other contraction-figure markers, per D15 | |
+|       | Step                                                                                      |                                    |
+| ----- | ----------------------------------------------------------------------------------------- | ---------------------------------- |
+| **A** | 1 Repo, licence, NOTES, DECISIONS                                                         | done                               |
+|       | 2 Packaging, src layout, ruff                                                             | done                               |
+|       | 3 GitHub Actions CI                                                                       | done                               |
+| **B** | 4 `Params`                                                                                | done                               |
+|       | 5 TIFF sequence loader                                                                    | done                               |
+|       | 6 Synthetic recording                                                                     | done                               |
+| **C** | 7 `detect_reference_frame`                                                                | done                               |
+|       | 8 `build_motion_pixel_mask`                                                               | done                               |
+|       | 9 `measure_contraction`, `measure_speed`                                                  | done                               |
+|       | 10a `find_peaks` and `find_baselines`                                                     | done                               |
+|       | 10b `measure_transients` — levels, flank crossings, per-beat table                        | done                               |
+| **D** | 11 `Result` object and the output files                                                   | done                               |
+|       | 12 The three figures                                                                      | done                               |
+|       | 13 `Boa`, the user-facing class, and logging                                              | done                               |
+| **E** | 14 Validation against FIJI output, and the `validation/` tooling for it                   | synthetic done, real data pending  |
+|       | 15 Example notebook on the client's recording                                             | needs data (prepared on synthetic) |
+|       | 16 Minimal docs overhaul: `docs/index.md`, installation, one pass over the four documents |                                    |
+|       | — prototype complete —                                                                    |                                    |
+| **F** | 17 Other input formats: TIFF stacks, PNG, AVI                                             |                                    |
+|       | 18 Gaussian blur, ROI, interactive reference picking                                      |                                    |
+|       | 19 Batch driver and CLI                                                                   |                                    |
+|       | 20 SLURM array job                                                                        |                                    |
+|       | 21 Performance work, if profiling justifies it                                            |                                    |
+|       | 22 The original's other contraction-figure markers, per D15                               |                                    |
+|       | 23 Finalise the docs: build the book, per the scheme below                                |                                    |
 
-Every module the prototype needs now exists. What remains is validation against real
-output, which is blocked on the client's data.
+Every module the prototype needs now exists. What remains is step 16 and validation
+against real output, and only the second of those is blocked on the client's data.
 
-## What the first FIJI comparison established
+The docs are split across two steps on purpose. Step 16 is what the prototype owes a
+reader — the folders are already in place, so it is filling the gaps and reading the four
+documents through once. Step 23 is the book, and it comes last because a build is only
+worth wiring up once the thing it documents has stopped moving.
 
-On 26 August 2026 the macro was run in FIJI on `synthetic_blobs_dataset/` with the
-defaults, 25 fps and `PeakDetectionWindow=16`, and the output kept in
-`../synthetic_blobs_dataset-results/26-08-26_Fiji_default/`. Running `boamotion` with
-`legacy=True` on the same folder now agrees:
+## What the FIJI comparisons established
 
-- **Reference frame 54, peaks at frames 15, 40, 64, 89, four beats** — identical, and the
-  `autoDetectStop` clamp to 97 matches too.
-- **`Overview-results.txt` is byte-identical**, all four beats and all ten columns.
+The macro has been run in FIJI twice, both times with the defaults, 25 fps and
+`PeakDetectionWindow=16`, and its output kept beside the input in
+`../synthetic_blobs_dataset-results/`:
+
+- **26 August 2026**, on a noise-free recording, in `26-08-26_Fiji_default_NOISELESS/`.
+- **31 August 2026**, on `synthetic_recording(noise=0.01, seed=0)`, in
+  `26-08-31_Fiji_default/`. That recording is now `synthetic_blobs_dataset/` and the
+  standard one everywhere. The demo and `BUILDING_BLOCKS.ipynb` already used it, and a
+  noise-free recording cannot exercise the baseline logic at all.
+
+Running `boamotion` with `legacy=True` on the same folder agrees in both cases:
+
+- **The reference frame, the peaks and the beat count are identical** — frame 54 and peaks
+  15, 40, 64, 89 without noise, frame 6 and peaks 14, 39, 64, 89 with it. Four beats
+  either way, and the `autoDetectStop` clamp to 97 matches too.
+- **`Overview-results.txt` is byte-identical**, all four beats and all ten columns. That
+  became literally true only with the line-ending fix: pandas pinned LF for this one file,
+  while ImageJ and everything else we write follow the platform.
 - **The traces agree to 4e-8 relative**, which is float32 accumulation order. That is the
   floor; text comparison of the trace files is not meaningful, so a diff has to parse them
   and compare with a tolerance (F26).
@@ -169,9 +187,9 @@ What is still unobserved:
    and this run could not test it: the macro never writes headers, so the string exists
    only in the Results window. It matters only for `legacy=False`, which writes headers of
    its own.
-2. **A recording that is not synthetic.** Every beat here is identical and the baseline is
-   exactly 0, so the baseline logic (F6, F7) and anything that depends on noise was not
-   really exercised. The client's A001 is still the test that counts.
+2. **A recording that is not synthetic.** The noisy run does exercise the baseline logic
+   (F6, F7), which the noise-free one could not, but every beat here is still identical
+   and the noise is uniform. The client's A001 is the test that counts.
 
 ## Where each finding lives
 
@@ -179,34 +197,34 @@ What is still unobserved:
 This says which code it touches. Two things are being tracked at once, so they get their
 own columns: whether we **correct** it, and whether it is **written** yet.
 
-| F | Where | Correct it? | Written |
-|---|---|---|---|
-| F1 | `reference.py` — `_select_legacy` vs `_select` | yes | step 7 |
-| F2 | `reference.py` — the frame mapping in `detect_reference_frame` | yes | step 7 |
-| F3 | `traces.py` — `_frames_to_use` | yes | step 8 |
-| F4 | `traces.py` — `_mask_weight` | yes | step 9 |
-| F5 | `transients.py` — `_zero_level` | yes | step 10a |
-| F6 | `transients.py` — `_range_positions` | yes | step 10a |
-| F7 | `transients.py` — `_legacy_flat_average` | yes | step 10a |
-| F8 | `transients.py` — `_dominates_neighbours` | no | step 10a |
-| F9 | `transients.py` — `measure_transients` | no | step 10b |
-| F10 | no code; it is the reasoning behind D4 | no | — |
-| F11 | `result.py` — the output column names | no | **step 11** |
-| F12 | `params.py` — superseded by `Params` and YAML, per D6 | no | step 4 |
-| F13 | `traces.py` — `_mean_change` averages the whole frame | no | step 9 |
-| F14 | `result.py` — `time_ms`, and the figures drawn on it | no | steps 11 and 12 |
-| F15 | `result.py` — `original_headers` | yes | step 11 |
-| F16 | `result.py` — `_write_overview` | yes | step 11 |
-| F17 | `result.py` — `file_names` | yes | steps 11 and 12 |
-| F22 | `result.py` — `comparison_curves` | yes | step 12 |
-| F23 | `result.py` — `_write_overview` | yes | step 14 |
-| F26 | `result.py` — `_imagej_number` | yes | step 14 |
-| F24 | `result.py` — `ORIGINAL_HEADERS` | no | step 14 |
-| F25 | no code; the macro couples drawing to measuring, we do not | no | — |
-| F18 | `traces.py` — the fixed `mean + std` threshold | no | step 8 |
-| F19 | `transients.py` — the fixed three-point test in `_crossing_before` | no | step 10b |
-| F20 | `traces.py` — `_frames_without_reference` | no | step 9 |
-| F21 | `transients.py` — `find_peaks` | no | step 10a |
+| F   | Where                                                              | Correct it? | Written         |
+| --- | ------------------------------------------------------------------ | ----------- | --------------- |
+| F1  | `reference.py` — `_select_legacy` vs `_select`                     | yes         | step 7          |
+| F2  | `reference.py` — the frame mapping in `detect_reference_frame`     | yes         | step 7          |
+| F3  | `traces.py` — `_frames_to_use`                                     | yes         | step 8          |
+| F4  | `traces.py` — `_mask_weight`                                       | yes         | step 9          |
+| F5  | `transients.py` — `_zero_level`                                    | yes         | step 10a        |
+| F6  | `transients.py` — `_range_positions`                               | yes         | step 10a        |
+| F7  | `transients.py` — `_legacy_flat_average`                           | yes         | step 10a        |
+| F8  | `transients.py` — `_dominates_neighbours`                          | no          | step 10a        |
+| F9  | `transients.py` — `measure_transients`                             | no          | step 10b        |
+| F10 | no code; it is the reasoning behind D4                             | no          | —               |
+| F11 | `result.py` — the output column names                              | no          | **step 11**     |
+| F12 | `params.py` — superseded by `Params` and YAML, per D6              | no          | step 4          |
+| F13 | `traces.py` — `_mean_change` averages the whole frame              | no          | step 9          |
+| F14 | `result.py` — `time_ms`, and the figures drawn on it               | no          | steps 11 and 12 |
+| F15 | `result.py` — `original_headers`                                   | yes         | step 11         |
+| F16 | `result.py` — `_write_overview`                                    | yes         | step 11         |
+| F17 | `result.py` — `file_names`                                         | yes         | steps 11 and 12 |
+| F22 | `result.py` — `comparison_curves`                                  | yes         | step 12         |
+| F23 | `result.py` — `_write_overview`                                    | yes         | step 14         |
+| F26 | `result.py` — `_imagej_number`                                     | yes         | step 14         |
+| F24 | `result.py` — `ORIGINAL_HEADERS`                                   | no          | step 14         |
+| F25 | no code; the macro couples drawing to measuring, we do not         | no          | —               |
+| F18 | `traces.py` — the fixed `mean + std` threshold                     | no          | step 8          |
+| F19 | `transients.py` — the fixed three-point test in `_crossing_before` | no          | step 10b        |
+| F20 | `traces.py` — `_frames_without_reference`                          | no          | step 9          |
+| F21 | `transients.py` — `find_peaks`                                     | no          | step 10a        |
 
 Two traps in reading this. "We do not correct it" does not mean there is nothing to write:
 F11 and F14 are behaviours we deliberately copy, and copying them is still work. And a
@@ -255,7 +273,7 @@ build, not as a contributor.
 README.md         landing: intro, install, one snippet, links out
 mkdocs.yml        not written yet
 docs/             the book, published; lowercase names become URLs
-  demo.ipynb  how-it-works.md          (index.md, installation.md still to write)
+  index.md  installation.md  demo.ipynb  how-it-works.md
 dev/              the build record; keeps its current names
   DECISIONS.md  LEGACY_MODE.md  NOTES.md  BUILDING_BLOCKS.ipynb
 validation/       stays put, a check rather than a document
@@ -293,6 +311,12 @@ Notebooks are committed **with** their outputs, so the figures are visible on Gi
 without running anything. The cost is that outputs go stale silently when the code
 changes, and that diffs are large. Re-run a notebook end to end before committing changes
 that affect it.
+
+**To do:** have CI execute `docs/demo.ipynb` and fail on an error, so a stale notebook is
+caught rather than noticed. `nbclient` is already in the `dev` extra for it; `ipykernel`
+would have to join it, since CI installs `.[dev]` only. Such a check would have caught
+`BUILDING_BLOCKS.ipynb` printing a `legacy` default and a parameter list that had both
+moved on.
 
 ## The conda environment
 

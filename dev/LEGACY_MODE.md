@@ -10,14 +10,16 @@ remember why a function has two branches. Line numbers refer to
 `MUSCLEMOTION v1-1beta.ijm`.
 
 **The F numbers are shared across all three files**, so any finding can be followed from
-one to the next. The eleven below are the quirks of the original's implementation; the
+one to the next. The seventeen below are the quirks of the original's implementation; the
 rest of the findings in `DECISIONS.md` are observations of another kind.
 
-All are implemented. Every one is corrected by `legacy=False` except F8 and F9, which are
-definitions rather than mistakes and so are reproduced in **both** modes: changing them
-would silently alter every result. They run roughly in the order the analysis meets them —
-reference frame, mask, transients, output — which is numeric order apart from F15 and F16,
-added last and due to be renumbered at the final overhaul.
+All are implemented. Every one is corrected by `legacy=False` except F8, F9, F24 and F25.
+The first two are definitions rather than mistakes, so they are reproduced in **both**
+modes: changing them would silently alter every result. The other two are not ours to
+correct — a column order and a coupling we simply never had. They run roughly in the
+order the analysis meets them — reference frame, mask, transients, output — which is
+numeric order apart from F15 onwards, added later and due to be renumbered at the final
+overhaul.
 
 Three conventions to keep in mind while reading the excerpts. Arrays in the ImageJ macro
 language are **0-based**, but stack slices are **1-based**, and the macro mixes the two
@@ -107,8 +109,9 @@ frames give `0/0`, which is `NaN`, and `Array.rankPositions` sorts `NaN` last �
 leftover zero at (b) still ranks first and the mechanism above holds unchanged. Reading
 `0/0` as "exactly on the unity line" instead, which is what it means, makes the genuine
 zeros tie with the leftover one and hands the win to a different frame. Validating against
-FIJI on a synthetic recording is what surfaced this: the macro chose frame 54 and we chose
-frame 1.
+FIJI on a noise-free synthetic recording is what surfaced this: every rest frame there is
+perfectly still, the macro chose frame 54 and we chose frame 1. Noise breaks the ties, so
+a real recording will rarely show the difference this starkly.
 
 **What boamotion does.** `reference.py` has both. `_select_legacy` is transcribed loop for
 loop, zero-fill and all, so the mechanism stays visible rather than being asserted in a
