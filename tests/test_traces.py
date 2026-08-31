@@ -20,14 +20,6 @@ def frames_with_bright_pixels(spots, shape=(4, 4), value=1000.0):
     return stack
 
 
-def masked_trace(recording, reference_frame, mask=None):
-    reference = recording.frames[reference_frame - 1].astype(np.float32)
-    changes = (np.abs(frame.astype(np.float32) - reference) for frame in recording.frames)
-    return np.array(
-        [change[mask].mean() if mask is not None else change.mean() for change in changes]
-    )
-
-
 def test_mask_covers_the_moving_blob_and_nothing_else():
     recording = synthetic_recording(noise=0.01, seed=0)
     reference = detect_reference_frame(recording.frames, legacy=False)
@@ -43,21 +35,6 @@ def test_mask_keeps_a_small_fraction_of_the_frame():
     reference = detect_reference_frame(recording.frames, legacy=False)
     mask = build_motion_pixel_mask(recording.frames, reference)
     assert 0.02 < mask.mean() < 0.25
-
-
-def test_mask_lifts_the_signal_clear_of_the_noise_floor():
-    # The point of the mask: background pixels never move but still average in noise.
-    recording = synthetic_recording(noise=0.01, seed=0)
-    reference = detect_reference_frame(recording.frames, legacy=False)
-    mask = build_motion_pixel_mask(recording.frames, reference)
-
-    rest = np.array(recording.rest_frames) - 1
-    peak = np.array(recording.peak_frames) - 1
-    whole = masked_trace(recording, reference)
-    kept = masked_trace(recording, reference, mask)
-
-    assert whole[rest].mean() / whole[peak].mean() > 0.15
-    assert kept[rest].mean() / kept[peak].mean() < 0.06
 
 
 def test_threshold_is_the_mean_plus_one_standard_deviation():

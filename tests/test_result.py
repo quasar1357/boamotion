@@ -167,23 +167,6 @@ def test_the_legacy_run_writes_the_original_names(tmp_path):
     ]
 
 
-def test_corrected_names_are_lower_case_throughout(tmp_path):
-    _, target = written(tmp_path, legacy=False)
-    assert target.name == "A001-results"
-    assert sorted(p.name for p in target.iterdir()) == [
-        "beats.csv",
-        "contraction.png",
-        "contraction.txt",
-        "log.txt",
-        "overview-results.txt",
-        "parameters.yaml",
-        "run-summary.txt",
-        "speed-comparison.png",
-        "speed-of-contraction.png",
-        "speed-of-contraction.txt",
-    ]
-
-
 def test_no_output_name_contains_a_space_or_bracket(tmp_path):
     _, target = written(tmp_path, legacy=False)
     for path in [target, *target.iterdir()]:

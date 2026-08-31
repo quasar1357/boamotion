@@ -37,14 +37,17 @@ def test_rest_frames_are_identical_without_noise():
         assert np.array_equal(rec.frames[frame - 1], first)
 
 
-def test_the_blob_is_furthest_from_rest_at_each_peak():
-    # The whole analysis rests on this: distance from the resting frame peaks
-    # exactly where the ground truth says it should.
-    rec = synthetic_recording()
+def assert_each_beat_peaks_where_it_was_built(rec):
+    """Distance from the resting frame is largest exactly where the ground truth says."""
     trace = naive_contraction(rec.frames, reference=rec.rest_frames[0])
     for beat, peak in enumerate(rec.peak_frames):
         beat_slice = trace[beat * rec.frames_per_beat : (beat + 1) * rec.frames_per_beat]
         assert np.argmax(beat_slice) + beat * rec.frames_per_beat + 1 == peak
+
+
+def test_the_blob_is_furthest_from_rest_at_each_peak():
+    # The whole analysis rests on this.
+    assert_each_beat_peaks_where_it_was_built(synthetic_recording())
 
 
 def test_trace_returns_to_zero_at_rest():
@@ -63,11 +66,7 @@ def test_noise_is_reproducible_and_seed_dependent():
 
 
 def test_noise_does_not_move_the_peaks():
-    rec = synthetic_recording(noise=0.01, seed=3)
-    trace = naive_contraction(rec.frames, reference=rec.rest_frames[0])
-    for beat, peak in enumerate(rec.peak_frames):
-        beat_slice = trace[beat * rec.frames_per_beat : (beat + 1) * rec.frames_per_beat]
-        assert np.argmax(beat_slice) + beat * rec.frames_per_beat + 1 == peak
+    assert_each_beat_peaks_where_it_was_built(synthetic_recording(noise=0.01, seed=3))
 
 
 def test_nothing_clips():
