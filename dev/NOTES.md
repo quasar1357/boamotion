@@ -120,7 +120,7 @@ the notebook with it or the repo is inconsistent at that commit.
 |       | 13 `Boa`, the user-facing class, and logging                                              | done                               |
 | **E** | 14 Validation against FIJI output, and the `validation/` tooling for it                   | synthetic done, real data pending  |
 |       | 15 Example notebook on the client's recording                                             | needs data (prepared on synthetic) |
-|       | 16 Minimal docs overhaul: `docs/index.md`, installation, one pass over the four documents |                                    |
+|       | 16 Minimal docs overhaul: `docs/index.md`, installation, one pass over the four documents | done                               |
 |       | — prototype complete —                                                                    |                                    |
 | **F** | 17 Other input formats: TIFF stacks, PNG, AVI                                             |                                    |
 |       | 18 Gaussian blur, ROI, interactive reference picking                                      |                                    |
