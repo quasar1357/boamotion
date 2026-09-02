@@ -75,14 +75,11 @@ The reasoning is in `DECISIONS.md` (D5, D6, D9, D10); these are the rules they i
 
 The questions themselves are `DECISIONS.md` section 2; this is what we are waiting for.
 
-- **`A001.zip`** (TIFF sequence, ~800 frames, 25 fps) was shared as a SharePoint link we
-  have no rights to; access was requested there and the client asked to approve it on
-  21 August 2026. This is the only real blocker — with the recording in hand we can run the
-  FIJI plugin ourselves, so their own results folder is useful but not required.
-- **The `demo/` folder** (Q2), if their FIJI installation has it.
-- **The first dialog's answers** (Q3). They do not decide the diff, since both sides can be
-  run with the same settings; what matters is only whether Gaussian blur or cropping are
-  part of the routine, as those two alone are unimplemented (step 18).
+- **The `demo/` folder** (Q2), if their FIJI installation has it. The last one open.
+
+`A001.zip` arrived on 2 September 2026 and is compared; the first dialog's settings (Q3)
+are settled too, from the client's screenshots and from A001's own log, which records
+`guassianBlur10: No`. Neither blocks anything now.
 
 ## Frame ordering in image sequences
 
@@ -118,8 +115,8 @@ the notebook with it or the repo is inconsistent at that commit.
 | **D** | 11 `Result` object and the output files                                                   | done                               |
 |       | 12 The three figures                                                                      | done                               |
 |       | 13 `Boa`, the user-facing class, and logging                                              | done                               |
-| **E** | 14 Validation against FIJI output, and the `validation/` tooling for it                   | synthetic done, real data pending  |
-|       | 15 Example notebook on the client's recording                                             | needs data (prepared on synthetic) |
+| **E** | 14 Validation against FIJI output, and the `validation/` tooling for it                   | done, two checker fixes open       |
+|       | 15 Example notebook on the client's recording                                             | A001 in hand, notebook to write    |
 |       | 16 Minimal docs overhaul: `docs/index.md`, installation, one pass over the four documents | done                               |
 |       | — prototype complete —                                                                    |                                    |
 | **F** | 17 Other input formats: TIFF stacks, PNG, AVI                                             |                                    |
@@ -191,10 +188,32 @@ crossing falls past the end of the trace and is written as `0` (F18); at 30% it 
 inside, and both tools measure all four beats. The comparison therefore covers two
 parameter sets, not just the defaults.
 
-What is still unobserved is **a recording that is not synthetic**. The noisy run does
-exercise the baseline logic (F12, F13), which the noise-free one could not, but every beat
-here is still identical and the noise is uniform. The client's A001 is the test that
-counts.
+**2 September 2026 — the client's A001**, the first recording that is not synthetic: 799
+frames at 25 fps, run in FIJI at the client's own settings (`PeakDetectionWindow=20`, the
+rest defaults) and kept in `../A001_results/`. `legacy=True` reproduces it — reference
+frame 227, the same nine peaks, `Overview-results.txt` equal to the digit across all ten
+columns and all nine beats, and the traces at 4e-8 as before. Real data behaves like the
+synthetic recording.
+
+Two things the *comparison* gets wrong on it. Both are in `validation/`, neither in
+`boamotion`, and both are open:
+
+- **The falling-flank check reports a difference that is not one.** Where the rising flank
+  fails, the macro prints only `lowDown false at peak: c` and never a `lowUp` line, even
+  though it drops the relaxation time too (v1.0 line 1211). A001's beat 9 is exactly that
+  case: both tools leave the relaxation empty, and only the log cannot say so. The check
+  has to allow for the beats whose rising flank already failed.
+- **`compare_results_files` normalises by the whole file.** One worst absolute difference
+  over one global maximum lets a small column hide behind a large one: in
+  `Overview-results.txt` the amplitudes reach 47000 while a duration column tops out at
+  160, so an error of 0.04 ms there would still pass 1e-6. The comparison belongs per
+  column, reporting which column is worst.
+
+The client also sent the MUSCLEMOTION paper's supplementary movie, in
+`C:/Users/roman/Documents/Data/MuscleMotion_test_data/MM paper files/` — 1702 frames,
+542x576, uint8, with the paper and its figures. It comes with no settings and no results,
+so it is a second recording to run on, not a second reference to check against. A001 stays
+the reference.
 
 ## Where each finding lives
 
