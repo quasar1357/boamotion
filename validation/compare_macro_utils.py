@@ -136,11 +136,14 @@ def _int_or_none(text: str | None) -> int | None:
     return None if text is None else int(text)
 
 
-def write_or_print(*text, file_dir=None):
-    """Write to file or print to console."""
-    if file_dir is None:
+def write_or_print(*text, file_dir=None, also_print=True):
+    """Print the report, and write it to `file_dir` as well where one is given.
+
+    Pass `also_print=False` for a long report that would only clutter the notebook.
+    """
+    if also_print:
         print(*text)
-    else:
+    if file_dir is not None:
         with open(f"{file_dir}/{TIMESTAMP}_diff.txt", "a", encoding="utf-8") as f:
             full_string = " ".join(str(t) for t in text) + "\n"
             if full_string.startswith("==="):
