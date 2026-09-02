@@ -97,7 +97,12 @@ def _numbers_after(header: str, lines) -> tuple[int, ...]:
 
 
 def _flank_failures(lines) -> dict[str, tuple[int, ...]]:
-    """Which beats lost which flank, as 1-based beat numbers."""
+    """Which beats lost which flank, as 1-based beat numbers.
+
+    Only the rising list is complete. The macro prints `lowUp false` inside the branch
+    where the rising flank was found, so a beat that lost both is reported as a rising
+    failure alone and the log never states its falling verdict.
+    """
     failures: dict[str, list[int]] = {"rising": [], "falling": []}
     for line in lines:
         found = _FLANK_FAILURE.search(line)
@@ -152,17 +157,26 @@ def write_or_print(*text, file_dir=None, also_print=True):
 
 
 def compare_results_files(macro, ours, rel_thresh=1e-6):
-    """How far two of the output tables sit apart, as an absolute and a relative gap.
+    """How far two of the output tables sit apart, taken column by column.
 
     Float32 accumulates in a different order here than in ImageJ, so the tables agree to
     about 1e-8 rather than exactly. `rel_thresh` is what still counts as agreement.
 
-    Returns `(None, None, None)` where the shapes differ, which no threshold can bridge.
+    Each column is normalised by its own largest value. The tables mix milliseconds with
+    amplitudes, and one scale for the whole file would let a small column hide behind a
+    large one. Returns the worst column, as `(worst, relative, verdict, column)`.
+
+    Returns four Nones where the shapes differ, which no threshold can bridge.
     """
     if macro.shape != ours.shape:
-        return None, None, None
+        return None, None, None, None
 
-    worst = np.nanmax(np.abs(macro - ours))
-    relative = worst / (np.nanmax(np.abs(macro)) or 1.0)
+    gaps = []
+    for column in range(macro.shape[1]):
+        worst = np.nanmax(np.abs(macro[:, column] - ours[:, column]))
+        gaps.append((worst / (np.nanmax(np.abs(macro[:, column])) or 1.0), worst, column))
+
+    # On a tie, and so on a file that agrees exactly, name the first column.
+    relative, worst, column = max(gaps, key=lambda gap: (gap[0], gap[1], -gap[2]))
     verdict = "OK" if relative < rel_thresh else "DIFF"
-    return worst, relative, verdict
+    return worst, relative, verdict, column

@@ -115,7 +115,7 @@ the notebook with it or the repo is inconsistent at that commit.
 | **D** | 11 `Result` object and the output files                                                   | done                               |
 |       | 12 The three figures                                                                      | done                               |
 |       | 13 `Boa`, the user-facing class, and logging                                              | done                               |
-| **E** | 14 Validation against FIJI output, and the `validation/` tooling for it                   | done, two checker fixes open       |
+| **E** | 14 Validation against FIJI output, and the `validation/` tooling for it                   | done                               |
 |       | 15 Example notebook on the client's recording                                             | A001 in hand, notebook to write    |
 |       | 16 Minimal docs overhaul: `docs/index.md`, installation, one pass over the four documents | done                               |
 |       | — prototype complete —                                                                    |                                    |
@@ -195,19 +195,20 @@ frame 227, the same nine peaks, `Overview-results.txt` equal to the digit across
 columns and all nine beats, and the traces at 4e-8 as before. Real data behaves like the
 synthetic recording.
 
-Two things the *comparison* gets wrong on it. Both are in `validation/`, neither in
-`boamotion`, and both are open:
+Two things the *comparison* got wrong on it, both in `validation/` rather than in
+`boamotion`, and both since fixed:
 
 - **The falling-flank check reports a difference that is not one.** Where the rising flank
   fails, the macro prints only `lowDown false at peak: c` and never a `lowUp` line, even
   though it drops the relaxation time too (v1.0 line 1211). A001's beat 9 is exactly that
   case: both tools leave the relaxation empty, and only the log cannot say so. The check
-  has to allow for the beats whose rising flank already failed.
+  now skips the beats whose rising flank already failed, which is exactly the set the log
+  leaves unstated.
 - **`compare_results_files` normalises by the whole file.** One worst absolute difference
   over one global maximum lets a small column hide behind a large one: in
   `Overview-results.txt` the amplitudes reach 47000 while a duration column tops out at
-  160, so an error of 0.04 ms there would still pass 1e-6. The comparison belongs per
-  column, reporting which column is worst.
+  160, so an error of 0.04 ms there would still pass 1e-6. It now runs per column, each
+  normalised by its own largest value, and names the worst column.
 
 The client also sent the MUSCLEMOTION paper's supplementary movie, in
 `C:/Users/roman/Documents/Data/MuscleMotion_test_data/MM paper files/` — 1702 frames,

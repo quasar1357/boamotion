@@ -128,14 +128,14 @@ def test_tables_of_different_shape_are_reported_as_incomparable():
     macro = np.zeros((4, 3))
     ours = np.zeros((3, 3))
 
-    assert compare_results_files(macro, ours) == (None, None, None)
+    assert compare_results_files(macro, ours) == (None, None, None, None)
 
 
 def test_tables_that_agree_to_float32_noise_still_count_as_agreeing():
     macro = np.array([[1000.0, 2000.0]])
     ours = macro + 1e-5
 
-    worst, relative, verdict = compare_results_files(macro, ours)
+    worst, relative, verdict, _ = compare_results_files(macro, ours)
 
     assert verdict == "OK"
     assert relative < 1e-6
@@ -146,6 +146,18 @@ def test_a_real_disagreement_is_reported_as_a_difference():
     macro = np.array([[1000.0, 2000.0]])
     ours = np.array([[1000.0, 2500.0]])
 
-    _, _, verdict = compare_results_files(macro, ours)
+    _, _, verdict, _ = compare_results_files(macro, ours)
 
     assert verdict == "DIFF"
+
+
+def test_a_small_column_does_not_hide_behind_a_large_one():
+    """One scale for the whole file would divide a millisecond gap by an amplitude."""
+    macro = np.array([[160.0, 47000.0]])
+    ours = np.array([[160.04, 47000.0]])
+
+    worst, relative, verdict, column = compare_results_files(macro, ours)
+
+    assert (verdict, column) == ("DIFF", 0)
+    assert worst == pytest.approx(0.04)
+    assert relative == pytest.approx(0.04 / 160)
