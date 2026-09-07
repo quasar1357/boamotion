@@ -1,15 +1,72 @@
 # Decisions, findings and open questions
 
 Everything worth raising with the client, in one file. Items are numbered so they can be
-referenced directly in a meeting. Not everything here is a trade-off — section 3 in
+referenced directly in a meeting. Not everything here is a trade-off — section 4 in
 particular is observations about the original macro that the client should know about.
-
-Status of each decision: **taken** (we have decided, client may still object),
-**proposed** (our recommendation, awaiting client input) or **open**.
 
 ---
 
-## 1. Decisions and trade-offs
+## 1. Questions for the client, and what came back
+
+Open with him: **Q1**, asked again, and **Q6**, asked for the first time, both in the mail
+of 7 September 2026. The rest are answered or settled, and are kept here as the record of
+what came back.
+
+- **Q1 — Frame rate** · *open*. The example recording is 25 fps. The MUSCLEMOTION manual requires
+  60–75 fps minimum, and the macro itself prints `WARNING: Recorded framerate is low`
+  below 50 fps. At 25 fps the timing resolution is 40 ms per frame, which meaningfully
+  limits the precision of time-to-peak and relaxation time. Is 25 fps the standard for
+  this assay, and are the temporal parameters being used quantitatively? (Amplitude
+  measures are much less affected than timing measures.)
+- **Q2 — Demo data** · *open, but no longer with him*. The folder he shared on
+  7 September 2026 holds the paper's supplementary movie, which is not this. Luca Sala
+  was asked for it instead. The manual describes a `demo/` folder containing `demo_stack.tif`
+  and a `demo_results/` folder with correct reference outputs. It is *not* in the public
+  GitHub repository. Does your FIJI installation have it? It would let us validate against
+  known-good numbers immediately.
+- **Q3 — Settings** · *answered*: version 1.1 beta, Gaussian blur off, no ROI. The
+  assumptions below hold, and v1.1 beta computes exactly what the v1.0 we ported does
+  (`NOTES.md`). The screenshot shows only the third wizard dialog. What did you select
+  in the first one — specifically Gaussian blur, noise reduction, and reference-frame
+  detection? We are currently assuming the defaults (blur off, noise reduction on,
+  automatic reference frame).
+- **Q4 — Cropping** · *answered*, they crop beforehand. See D7.
+- **Q5 — Scope** · *decided*, 7 September 2026. "Runs on the SLURM cluster" was the
+  original motivation, and the prototype already does: an `sbatch` script that activates the
+  environment, builds a `Boa`, runs it and saves is all a job needs, one per recording or an
+  array over a list of them. Nothing in the library is cluster-hostile — one process, no
+  GUI, no FIJI. What is deferred is convenience and speed, not capability: a batch driver, a
+  CLI, an array-job template and any optimisation (section 2).
+- **Q6 — A001 in public documentation** · *open*. The published examples run on a
+  synthetic recording so that any reader can re-run them, and no client data is in the
+  repository. May A001 be shown there instead, or alongside? Asked on 7 September 2026.
+
+---
+
+## 2. Deferred — after the prototype
+
+Agreed as out of prototype scope, listed so nothing is lost:
+
+- Input formats other than a TIFF image sequence directory (TIFF stacks, PNG sequences,
+  uncompressed AVI).
+- Gaussian blur preprocessing (only relevant for samples with highly repetitive
+  structures, such as adult cardiomyocytes).
+- Region-of-interest / cropping parameter (D7).
+- Interactive reference-frame selection (D5).
+- Batch processing over directories, and the command-line interface.
+- SLURM convenience: an array-job template and a worked example. A job can run
+  `boamotion` as it stands (Q5); what is missing is the scaffolding around it.
+- Performance work: chunked or parallel reading, and any per-recording parallelism (D9).
+- Drift and artefact correction.
+- The published documentation site. The prototype ships written documentation; building
+  it into a book is deferred (step 23).
+
+---
+
+## 3. Decisions and trade-offs
+
+Status of each decision: **taken** (we have decided, client may still object),
+**proposed** (our recommendation, awaiting client input) or **open**.
 
 ### D1 — Licence: GPL-3.0 · *taken, confirmed*
 
@@ -33,7 +90,7 @@ rejected because COBRApy is a well-known package in the same scientific-Python s
 ### D3 — Faithful port, with the original's quirks reproducible · *taken, confirmed*
 
 The prototype's acceptance criterion is "same numbers as FIJI". Several genuine bugs in
-the original (section 3) change those numbers. Both behaviours are implemented and tested,
+the original (section 4) change those numbers. Both behaviours are implemented and tested,
 behind a single `legacy` switch: `legacy=True` reproduces the original exactly, and
 `legacy=False` corrects every finding except F10 and F14.
 
@@ -47,7 +104,7 @@ has to be asked for.
 an explicit, per-item choice about which bugs to fix — rather than discovering that
 numbers changed silently. The cost of defaulting to the corrected mode is that a run set
 up carelessly will not match old FIJI output; that is the intended reading, but it is
-worth stating plainly, and it is why every finding is listed individually in section 3.
+worth stating plainly, and it is why every finding is listed individually in section 4.
 
 ### D4 — Reimplement the original's algorithms rather than substituting library equivalents · *taken*
 
@@ -92,7 +149,7 @@ defensible.
 
 The macro measures over the entire frame, so users currently crop in FIJI beforehand to
 exclude non-contracting regions. We will offer an explicit region-of-interest parameter
-instead (deferred to after the prototype, see section 4). **Question for the client: do
+instead (deferred to after the prototype, see section 2). **Question for the client: do
 you currently crop before running the macro?** Answered on 7 September 2026: they crop
 the images before starting the analysis and never select an ROI, so the macro always
 measures a whole frame that is already the region of interest. Whole-frame measurement
@@ -118,6 +175,13 @@ would be premature optimisation.
 
 We reproduce the original's seven output files and their names, so results can be diffed
 directly against FIJI output, and additionally write a tidy CSV and the parameter dump.
+
+The two kinds of file also speak two languages, which is worth knowing before reading a
+column name. `Overview-results.txt` reproduces the macro's Results table and keeps its
+column names, the `100 - percentage` convention included (F16), in **both** modes. Our own
+table — `res.beats` and `beats.csv` — names each column by the level actually requested,
+`transient_10pct_ms` for the 10 % one. The two trace files need no convention at all: time
+and value, one pair per line, in both modes.
 
 Some settings cannot survive contact with a recording: a search range longer than the
 recording is shortened, an odd peak window is rounded up. The parameter dump therefore
@@ -187,36 +251,7 @@ sloped. Only their horizontal extent means anything.
 
 ---
 
-## 2. Open questions for the client
-
-The client answered on 7 September 2026. Q1 and Q5 are the two he passed over.
-
-- **Q1 — Frame rate** · *open*. The example recording is 25 fps. The MUSCLEMOTION manual requires
-  60–75 fps minimum, and the macro itself prints `WARNING: Recorded framerate is low`
-  below 50 fps. At 25 fps the timing resolution is 40 ms per frame, which meaningfully
-  limits the precision of time-to-peak and relaxation time. Is 25 fps the standard for
-  this assay, and are the temporal parameters being used quantitatively? (Amplitude
-  measures are much less affected than timing measures.)
-- **Q2 — Demo data** · *open*. The folder he shared on 7 September 2026 holds the
-  paper's supplementary movie, which is not this. The manual describes a `demo/` folder containing `demo_stack.tif`
-  and a `demo_results/` folder with correct reference outputs. It is *not* in the public
-  GitHub repository. Does your FIJI installation have it? It would let us validate against
-  known-good numbers immediately.
-- **Q3 — Settings** · *answered*: version 1.1 beta, Gaussian blur off, no ROI. The
-  assumptions below hold, and v1.1 beta computes exactly what the v1.0 we ported does
-  (`NOTES.md`). The screenshot shows only the third wizard dialog. What did you select
-  in the first one — specifically Gaussian blur, noise reduction, and reference-frame
-  detection? We are currently assuming the defaults (blur off, noise reduction on,
-  automatic reference frame).
-- **Q4 — Cropping** · *answered*, they crop beforehand. See D7.
-- **Q5 — Scope** · *open*. "Runs on the SLURM cluster" was the original motivation, but batch
-  processing and performance work are in the Outlook list, not the prototype. Worth
-  confirming this is understood, since it is the one place where the stated prototype and
-  the original project goal diverge.
-
----
-
-## 3. Findings about the original macro
+## 4. Findings about the original macro
 
 Observations from reading `MUSCLEMOTION v1-1beta.ijm`. These are not criticisms of the
 science — the tool is well designed and widely used — but they affect what "identical
@@ -229,14 +264,13 @@ so a finding can be followed from its consequence here, to its plain-language de
 there, to the original source and the mechanism worked through line by line.
 
 They are grouped by how much there is to do about them: the ones we treat as mistakes and
-correct, the ones we keep although a better option exists, the ones we reproduce as they
-are, and the two we neither correct nor copy. Within a group the numbers ascend, and **the
+correct, the ones we reproduce as they are, the design choices we keep although a better
+option might exist, and the ones we left out. Within a group the numbers ascend, and **the
 number is the order the analysis meets the finding** — reference frame, mask, traces,
 transients, output — so a higher number means a later stage, not a later discovery.
 
-Every finding in the first and third groups has a section of its own number in
-`LEGACY_MODE.md`, except F16, which is a naming convention rather than code. The others are
-observations, and have none.
+The first two groups are exactly what `LEGACY_MODE.md` covers, each with a section of its
+own number. The other two are observations, and have none.
 
 | F | Finding | Impact |
 |---|---|---|
@@ -254,20 +288,20 @@ observations, and have none.
 | F21 | Numbers are written with ImageJ's own formatting | cosmetic |
 | F22 | The output file names mix conventions | cosmetic |
 | F23 | The speed comparison plot ends in a drop to zero | minor |
-| | **Kept, though a better option exists** | |
+| | **Reproduced as they are** | |
+| F10 | The peak window is one frame narrower than it reads | minor |
+| F14 | The first percentage silently defines three other measures | by design |
+| F16 | Percentage columns are named by `100 - percentage` in overview | convention |
+| F20 | Peak-to-peak time is the last column, not the seventh | convention |
+| | **Design choices (better options may exist)** | |
 | F5 | The mask threshold is fixed at mean + 1 SD | moderate |
 | F6 | Masked amplitudes depend on how much of the frame the mask keeps | by design |
 | F7 | The reference frame is dropped rather than accounted for | minor |
 | F8 | The time axis closes the gap left by the reference frame | minor |
 | F11 | Peak detection is the macro's own, not a library algorithm | minor |
 | F15 | The three-point noise guard is not adjustable | moderate |
-| | **Reproduced as they are** | |
-| F10 | The peak window is one frame narrower than it reads | minor |
-| F14 | The first percentage silently defines three other measures | by design |
-| F16 | Percentage columns are named by `100 - percentage` | convention |
-| F20 | Peak-to-peak time is the last column, not the seventh | convention |
+| | **Left out** | |
 | F24 | A drawing option also decides whether four measurements are recorded | trap |
-| | **Not reproduced at all** | |
 | F25 | Settings live in ImageJ's global preferences | workflow |
 | F26 | Why the earlier Python attempt gave different results | — |
 
@@ -443,84 +477,12 @@ fine, and only this figure is affected. Harmless once recognised, but it looks l
 feature of the recording, and it is exactly the figure a user is asked to inspect to judge
 whether the measurement is behaving. Corrected by `legacy=False`.
 
-### Kept, though a better option exists
-
-Reproduced faithfully, and defensible as they stand, but an improvement is available if the
-client ever wants it. None is behind `legacy`, because none is a mistake.
-
-#### F5 — The mask threshold is fixed at mean + 1 standard deviation · *moderate*
-
-The pixel mask keeps whatever exceeds `mean + 1 SD` of the maximum-change map. That
-multiplier is not exposed anywhere, so the only way to change how much of the frame is kept
-is to change the frame.
-
-**A better option:** expose the multiplier, or choose the threshold from the data — the
-map is usually strongly bimodal, so Otsu's method would adapt to sparse or crowded fields
-without a magic number. Worth revisiting if tissue occupies very little of the frame, where
-1 SD may keep too much background.
-
-#### F6 — Masked amplitudes depend on how much of the frame the mask keeps
-
-The mask is applied by multiplying the difference image, but the average that follows is
-taken over the *whole* frame rather than over the kept pixels. A mask covering a tenth of
-the frame therefore produces amplitudes roughly a tenth of the average change in the
-moving region.
-
-**Consequence:** contraction amplitudes are not comparable between recordings whose masks
-differ in coverage — the same tissue filling less of the field reads as a smaller
-contraction. Timing measures are unaffected. This is design rather than a bug, so we
-reproduce it in both modes.
-
-#### F7 — The reference frame is dropped rather than accounted for · *minor*
-
-The reference frame is removed from the recording before measuring, so it has no point in
-either trace. That is reasonable — its contraction value would be exactly zero by
-construction, which is not a measurement — but it leaves a gap that later code has to
-remember, and F8 is the consequence of forgetting it.
-
-**A better option:** keep the point and mark it, or keep a frame-number axis alongside the
-trace, so nothing downstream has to reason about the gap. We reproduce the removal because
-every trace index in the original's output depends on it.
-
-#### F8 — The time axis closes the gap left by the reference frame
-
-The reference frame is removed from the stack before measuring, so the traces hold one
-point fewer than the recording. The two trace points either side of it are still adjacent
-in the trace but two sampling intervals apart in the recording — with frame 5 as
-reference, trace points 3 and 4 are frames 4 and 6. The time axis adds one interval per
-point regardless, so that step is drawn half its true length.
-
-**Consequence:** every point after the reference frame is placed one frame too early.
-Durations measured between two points are unaffected, since the shift cancels; absolute
-peak times after the reference are off by one frame. Small, and smaller still because the
-reference is usually near the start of the recording.
-
-#### F11 — Peak detection is the macro's own algorithm, not a library one · *minor*
-
-Peaks are found with a sliding-window maximum plus a height threshold, rather than with
-`scipy.signal.find_peaks` and a prominence criterion. See D4: we ported it deliberately,
-because substituting it is exactly what made the earlier Python attempt disagree (F26).
-
-**A better option:** prominence-based detection copes better with a drifting baseline, and
-needs less tuning per recording. Worth offering as an alternative once the port is validated
-— but only as an option, never as a silent replacement.
-
-#### F15 — The three-point noise guard is not adjustable · *moderate*
-
-A flank crossing requires three consecutive points beyond the level. At the 60-75 fps the
-manual asks for, three points span 40-50 ms and the rule is a sensible noise filter. At the
-client's 25 fps they span **120 ms**, a substantial part of a flank, which biases every
-crossing outward and so lengthens the durations measured from it.
-
-**A better option:** make the count a parameter, or derive it from the frame rate. See Q1 —
-this is a second reason the frame rate matters beyond timing resolution.
-
 ### Reproduced as they are
 
 Behaviour we do not correct in either mode. F10 and F14 are implementation quirks like those
 above — they are documented in `LEGACY_MODE.md` too — but they are definitions rather than
-mistakes, and changing them would silently alter every result. The rest are a naming
-convention and two details of how the original's own output came to look as it does.
+mistakes, and changing them would silently alter every result. The other two are a naming
+convention and a detail of how the original's own output came to look as it does.
 
 #### F10 — The peak detection window is one frame narrower than it reads · *minor*
 
@@ -547,9 +509,11 @@ order, and document it.
 
 #### F16 — Column naming convention
 
-Percentage output columns are named by `100 - percentage`, so selecting 10% produces a
-column called "90-to-90 transient (ms)". Confusing at first sight, but it matches the CD90
-convention used in the field. We will keep it and document it.
+In `Overview-results.txt`, percentage columns are named by `100 - percentage`, so selecting
+10% produces a column called "90-to-90 transient (ms)". Confusing at first sight, but it
+matches the CD90 convention used in the field, so we keep it there in both modes. Our own
+table names the same column `transient_10pct_ms`, by the level actually requested — the
+split D10 describes.
 
 #### F20 — Peak-to-peak time is the last column, not the seventh
 
@@ -561,20 +525,108 @@ it and it lands last, the opposite of the order the code reads in.
 **Consequence:** only that the column order has to be taken from the output rather than
 from the source. Given F19, that order is the file's only description of itself.
 
+### Design choices (better options may exist)
+
+Design decisions rather than mistakes, reproduced faithfully and defensible as they stand,
+but an improvement is available if the client ever wants it. None is behind `legacy`, and
+none needs the macro's source to be understood, which is why `LEGACY_MODE.md` leaves them
+out.
+
+#### F5 — The mask threshold is fixed at mean + 1 standard deviation · *moderate*
+
+The pixel mask keeps whatever exceeds `mean + 1 SD` of the maximum-change map. That
+multiplier is not exposed anywhere, so the only way to change how much of the frame is kept
+is to change the frame.
+
+**A better option:** expose the multiplier, or choose the threshold from the data — the
+map is usually strongly bimodal, so Otsu's method would adapt to sparse or crowded fields
+without a magic number. Worth revisiting if tissue occupies very little of the frame, where
+1 SD may keep too much background.
+
+**In the port:** `traces.py`, the fixed `mean + std` threshold.
+
+#### F6 — Masked amplitudes depend on how much of the frame the mask keeps
+
+The mask is applied by multiplying the difference image, but the average that follows is
+taken over the *whole* frame rather than over the kept pixels. A mask covering a tenth of
+the frame therefore produces amplitudes roughly a tenth of the average change in the
+moving region.
+
+**Consequence:** contraction amplitudes are not comparable between recordings whose masks
+differ in coverage — the same tissue filling less of the field reads as a smaller
+contraction. Timing measures are unaffected. This is design rather than a bug, so we
+reproduce it in both modes.
+
+**In the port:** `traces.py`, `_mean_change`, which averages the whole frame.
+
+#### F7 — The reference frame is dropped rather than accounted for · *minor*
+
+The reference frame is removed from the recording before measuring, so it has no point in
+either trace. That is reasonable — its contraction value would be exactly zero by
+construction, which is not a measurement — but it leaves a gap that later code has to
+remember, and F8 is the consequence of forgetting it.
+
+**A better option:** keep the point and mark it, or keep a frame-number axis alongside the
+trace, so nothing downstream has to reason about the gap. We reproduce the removal because
+every trace index in the original's output depends on it.
+
+**In the port:** `traces.py`, `_frames_without_reference`.
+
+#### F8 — The time axis closes the gap left by the reference frame
+
+The reference frame is removed from the stack before measuring, so the traces hold one
+point fewer than the recording. The two trace points either side of it are still adjacent
+in the trace but two sampling intervals apart in the recording — with frame 5 as
+reference, trace points 3 and 4 are frames 4 and 6. The time axis adds one interval per
+point regardless, so that step is drawn half its true length.
+
+**Consequence:** every point after the reference frame is placed one frame too early.
+Durations measured between two points are unaffected, since the shift cancels; absolute
+peak times after the reference are off by one frame. Small, and smaller still because the
+reference is usually near the start of the recording.
+
+**In the port:** `result.py`, `time_ms` and the figures drawn on it.
+
+#### F11 — Peak detection is the macro's own algorithm, not a library one · *minor*
+
+Peaks are found with a sliding-window maximum plus a height threshold, rather than with
+`scipy.signal.find_peaks` and a prominence criterion. See D4: we ported it deliberately,
+because substituting it is exactly what made the earlier Python attempt disagree (F26).
+
+**A better option:** prominence-based detection copes better with a drifting baseline, and
+needs less tuning per recording. Worth offering as an alternative once the port is validated
+— but only as an option, never as a silent replacement.
+
+**In the port:** `transients.py`, `find_peaks`.
+
+#### F15 — The three-point noise guard is not adjustable · *moderate*
+
+A flank crossing requires three consecutive points beyond the level. At the 60-75 fps the
+manual asks for, three points span 40-50 ms and the rule is a sensible noise filter. At the
+client's 25 fps they span **120 ms**, a substantial part of a flank, which biases every
+crossing outward and so lengthens the durations measured from it.
+
+**A better option:** make the count a parameter, or derive it from the frame rate. See Q1 —
+this is a second reason the frame rate matters beyond timing resolution.
+
+**In the port:** `transients.py`, the fixed three-point test in `_crossing_before`.
+
+### Left out
+
+Neither corrected nor copied, because none of the three applies to the port: a coupling we
+simply never had, a workflow we replaced outright, and one that is not the macro's
+behaviour in the first place.
+
 #### F24 — A drawing option also decides whether four measurements are recorded
 
-`drawPeaks` controls whether peak markers are drawn on the contraction figure. The same
+`drawPeaks` (line 1261) controls whether peak markers are drawn on the contraction figure.
+The same
 block fills the baseline, peak amplitude, contraction amplitude and peak-to-peak columns,
 so switching off an annotation would remove four measurements from the results table.
 
 **Consequence:** none in practice — the flag is hard-wired to `true` and no dialog exposes
 it. Worth recording because it would be a trap for anyone extending the macro. `boamotion`
 keeps the two separate: what is measured does not depend on what is drawn.
-
-### Not reproduced at all
-
-Neither corrected nor copied: one is a workflow we replaced outright, the other is not the
-macro's behaviour in the first place.
 
 #### F25 — Settings are stored in ImageJ's global preferences
 
@@ -593,22 +645,3 @@ criterion instead of the macro's sliding-window-and-threshold rule; and flank cr
 use a different rule than the macro's "three consecutive points beyond the level". The
 reference frame is also never removed from the stack, which the macro does. This is the
 direct justification for D4.
-
----
-
-## 4. Deferred — after the prototype
-
-Agreed as out of prototype scope, listed so nothing is lost:
-
-- Input formats other than a TIFF image sequence directory (TIFF stacks, PNG sequences,
-  uncompressed AVI).
-- Gaussian blur preprocessing (only relevant for samples with highly repetitive
-  structures, such as adult cardiomyocytes).
-- Region-of-interest / cropping parameter (D7).
-- Interactive reference-frame selection (D5).
-- Batch processing over directories, and the command-line interface.
-- SLURM / cluster integration.
-- Performance work: chunked or parallel reading, and any per-recording parallelism (D9).
-- Drift and artefact correction.
-- The published documentation site. The prototype ships written documentation; building
-  it into a book is deferred (step 23).

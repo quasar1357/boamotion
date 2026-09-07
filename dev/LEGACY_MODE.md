@@ -1,7 +1,7 @@
 # The original's quirks, in its own code
 
 The last section of [`how-it-works.md`](../docs/how-it-works.md) describes these quirks in plain
-language, and section 3 of [`DECISIONS.md`](DECISIONS.md) records what each means for
+language, and section 4 of [`DECISIONS.md`](DECISIONS.md) records what each means for
 results. This file is the working reference behind both: for each one, the actual FIJI
 macro source, why it behaves as it does, and what `boamotion` does in either mode.
 
@@ -13,10 +13,12 @@ remember why a function has two branches. Line numbers refer to
 one to the next. The seventeen below are the quirks of the original's implementation; the
 rest of the findings in `DECISIONS.md` are observations of another kind.
 
-All are implemented. Every one is corrected by `legacy=False` except F10, F14, F20 and F24.
-The first two are definitions rather than mistakes, so they are reproduced in **both**
-modes: changing them would silently alter every result. The other two are not ours to
-correct — a column order and a coupling we simply never had. The numbers follow the order
+These are exactly the first two groups of section 4 in `DECISIONS.md`: the quirks we
+correct, and the quirks we keep. All are implemented. Every one is corrected by
+`legacy=False` except F10, F14, F16 and F20. The first two are definitions rather than
+mistakes, so they are reproduced in **both** modes: changing them would silently alter every
+result. The other two are the original's own conventions, a column name and a column order,
+which we keep so that its output stays its output. The numbers follow the order
 the analysis meets them — reference frame, mask, traces, transients, output — so a higher
 number is a later stage, and the gaps are the findings in `DECISIONS.md` that are not
 quirks of the implementation.
@@ -32,25 +34,25 @@ do. It is what makes `100-percentages[m]+"-to-"+100-percentages[m]+" transient (
 produce `90-to-90 transient (ms)` rather than a type error partway through, and equally
 what makes the all-`+` expression in F2 print `511` instead of `52`.
 
-| F | Quirk | Impact | Implemented in |
-|---|---|---|---|
-| F1 | [The unity-line filter never runs](#f1--the-unity-line-filter-never-runs) | significant | `reference.py` `_select_legacy` |
-| F2 | [The search start is not added back](#f2--the-search-start-is-not-added-back) | minor | `reference.py` `detect_reference_frame` |
-| F3 | [The mask loses its last frame](#f3--the-mask-loses-its-last-frame) | minor | `traces.py` `_frames_to_use` |
-| F4 | [The mask holds 255, not 1](#f4--the-mask-holds-255-not-1) | constant factor | `traces.py` `_mask_weight` |
-| F9 | [The peak threshold indexes the trace with a frame number](#f9--the-peak-threshold-indexes-the-trace-with-a-frame-number) | moderate | `transients.py` `_zero_level` |
-| F10 | [The peak window is a frame narrower than it reads](#f10--the-peak-window-is-a-frame-narrower-than-it-reads) | minor | `transients.py` `_dominates_neighbours` |
-| F12 | [A single detected peak loses its baseline](#f12--a-single-detected-peak-loses-its-baseline) | edge case | `transients.py` `_range_positions` |
-| F13 | [A baseline shortage narrows every later beat](#f13--a-baseline-shortage-narrows-every-later-beat) | moderate | `transients.py` `_legacy_flat_average` |
-| F14 | [The first percentage defines three other measures](#f14--the-first-percentage-defines-three-other-measures) | by design | `transients.py` `measure_transients` |
-| F17 | [The duration column is labelled 10% whatever was used](#f17--the-duration-column-is-labelled-10-whatever-was-used) | moderate | `result.py` `original_headers` |
-| F18 | [A measurement that was never found is written as 0](#f18--a-measurement-that-was-never-found-is-written-as-0) | moderate | `result.py` `_write_overview` |
-| F19 | [The results table is saved without headers or row numbers](#f19--the-results-table-is-saved-without-headers-or-row-numbers) | moderate | `result.py` `_write_overview` |
-| F20 | [Peak-to-peak time ends up in the last column](#f20--peak-to-peak-time-ends-up-in-the-last-column) | minor | `result.py` `ORIGINAL_HEADERS` |
-| F21 | [Numbers are written with ImageJ's own formatting](#f21--numbers-are-written-with-imagejs-own-formatting) | cosmetic | `result.py` `_imagej_number` |
-| F22 | [The output file names mix conventions](#f22--the-output-file-names-mix-conventions) | cosmetic | `result.py` `file_names` |
-| F23 | [The speed comparison plot ends in a drop to zero](#f23--the-speed-comparison-plot-ends-in-a-drop-to-zero) | minor | `result.py` `comparison_curves` |
-| F24 | [Four result columns are gated by a drawing option](#f24--four-result-columns-are-gated-by-a-drawing-option) | minor | not reproduced |
+| F | Quirk | Impact | `legacy=False` | Implemented in |
+|---|---|---|---|---|
+| F1 | [The unity-line filter never runs](#f1--the-unity-line-filter-never-runs) | significant | corrects it | `reference.py` `_select_legacy` |
+| F2 | [The search start is not added back](#f2--the-search-start-is-not-added-back) | minor | corrects it | `reference.py` `detect_reference_frame` |
+| F3 | [The mask loses its last frame](#f3--the-mask-loses-its-last-frame) | minor | corrects it | `traces.py` `_frames_to_use` |
+| F4 | [The mask holds 255, not 1](#f4--the-mask-holds-255-not-1) | constant factor | corrects it | `traces.py` `_mask_weight` |
+| F9 | [The peak threshold indexes the trace with a frame number](#f9--the-peak-threshold-indexes-the-trace-with-a-frame-number) | moderate | corrects it | `transients.py` `_zero_level` |
+| F10 | [The peak window is a frame narrower than it reads](#f10--the-peak-window-is-a-frame-narrower-than-it-reads) | minor | keeps it | `transients.py` `_dominates_neighbours` |
+| F12 | [A single detected peak loses its baseline](#f12--a-single-detected-peak-loses-its-baseline) | edge case | corrects it | `transients.py` `_range_positions` |
+| F13 | [A baseline shortage narrows every later beat](#f13--a-baseline-shortage-narrows-every-later-beat) | moderate | corrects it | `transients.py` `_legacy_flat_average` |
+| F14 | [The first percentage defines three other measures](#f14--the-first-percentage-defines-three-other-measures) | by design | keeps it | `transients.py` `measure_transients` |
+| F16 | [Percentage columns are named by 100 minus the level](#f16--percentage-columns-are-named-by-100-minus-the-level) | convention | keeps it | `result.py` `original_headers` |
+| F17 | [The duration column is labelled 10% whatever was used](#f17--the-duration-column-is-labelled-10-whatever-was-used) | moderate | corrects it | `result.py` `original_headers` |
+| F18 | [A measurement that was never found is written as 0](#f18--a-measurement-that-was-never-found-is-written-as-0) | moderate | corrects it | `result.py` `_write_overview` |
+| F19 | [The results table is saved without headers or row numbers](#f19--the-results-table-is-saved-without-headers-or-row-numbers) | moderate | corrects it | `result.py` `_write_overview` |
+| F20 | [Peak-to-peak time ends up in the last column](#f20--peak-to-peak-time-ends-up-in-the-last-column) | minor | keeps it | `result.py` `ORIGINAL_HEADERS` |
+| F21 | [Numbers are written with ImageJ's own formatting](#f21--numbers-are-written-with-imagejs-own-formatting) | cosmetic | corrects it | `result.py` `_imagej_number` |
+| F22 | [The output file names mix conventions](#f22--the-output-file-names-mix-conventions) | cosmetic | corrects it | `result.py` `file_names` |
+| F23 | [The speed comparison plot ends in a drop to zero](#f23--the-speed-comparison-plot-ends-in-a-drop-to-zero) | minor | corrects it | `result.py` `comparison_curves` |
 
 ---
 
@@ -435,6 +437,26 @@ level is the lowest, which is the hardest to reach — any level above it crosse
 peak. So if the first level is found, all of them are. We therefore do not reproduce the
 stale value, and there is nothing to correct.
 
+## F16 — Percentage columns are named by 100 minus the level
+
+`transientAnalysis`, line 1254.
+
+```javascript
+setResult(100-percentages[m]+"-to-"+100-percentages[m]+" transient (ms)", c, percentageData[m]);
+```
+
+**What happens.** Each percentage column is named by `100 - percentage`, so asking for the
+10 % level produces a column called `90-to-90 transient (ms)`. The expression looks as though
+it should fail partway through, and it is the precedence rule above that saves it: `-` binds
+tighter than `+`, so it evaluates as `(100-percentages[m]) + "-to-" + (100-percentages[m]) +
+" transient (ms)"` rather than concatenating a string and then subtracting from it.
+
+**What boamotion does.** Reproduces the naming in both modes — `original_headers` builds the
+same label from `100 - level` — because it is the CD90 convention the field uses, and the
+original's output should stay the original's output. Our own column names go the other way:
+`transient_10pct_ms` is named by the level actually requested, so `res.beats` and
+`Overview-results.txt` disagree on purpose.
+
 ## F17 — The duration column is labelled 10% whatever was used
 
 `transientAnalysis`, line 1243.
@@ -611,27 +633,6 @@ artefact in it is worth knowing about.
 truncates to the same length; when `legacy=True` it then zeroes the final point of each, as
 the original leaves it. `test_legacy_leaves_both_comparison_curves_at_zero` pins both sides.
 
-## F24 — Four result columns are gated by a drawing option
-
-`transientAnalysis`, line 1261.
-
-```javascript
-if(drawPeaks==true){
-    for(k=0;k<maxCount;k++){
-        Plot.drawLine(...);
-        ...
-        setResult("Baseline value (a.u.)", k, minValueList[k]);
-```
-
-**What happens.** `drawPeaks` decides whether the peak markers are drawn on the contraction
-figure, but the same block also fills the baseline, peak amplitude, contraction amplitude and
-peak-to-peak columns. Turning off a plot annotation therefore removes four measurements from
-the results table. It is hard-wired to `true` and no dialog exposes it, so nobody meets this
-in practice.
-
-**What boamotion does.** Nothing to reproduce: the measurements are computed and written
-regardless of what is drawn, and the figure is a separate concern from the table.
-
 ## Divergences we accept
 
 Places where we knowingly do not match the original bit for bit, in either mode.
@@ -647,5 +648,5 @@ should not arise with real camera noise.
 line, which is the sensible reading. Again, only reachable with noise-free frames, which is
 to say with synthetic recordings rather than real ones.
 
-**Gaussian blur** is not implemented (deferred, see `DECISIONS.md` section 4). It appears
+**Gaussian blur** is not implemented (deferred, see `DECISIONS.md` section 2). It appears
 in most of the excerpts above and is skipped when reading them.

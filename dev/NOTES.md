@@ -73,20 +73,12 @@ The reasoning is in `DECISIONS.md` (D5, D6, D9, D10); these are the rules they i
 
 ## Open items
 
-The questions themselves are `DECISIONS.md` section 2; this is what we are waiting for.
-
-- **Q1, the frame rate, and Q5, the prototype's scope against the SLURM goal.** The
-  client's answer of 7 September 2026 passed over both. Neither blocks anything: Q1 decides
-  how much weight the timing columns can carry, Q5 only confirms a shared understanding.
-- **Q2, the manual's `demo/` folder.** The folder the client shared on 7 September 2026 is
-  pulled, and holds A001, his own FIJI results and the paper's supplementary movie — not
-  `demo_stack.tif` and its reference results, which he took "the demo data" to mean. Luca
-  Sala is now the only likely source.
-- **Luca Sala's consent.** Roman writes to him, and the repository stays private until an
-  answer comes back (D1).
-
-Everything else the 21 August mail asked is answered; `DECISIONS.md` section 2 says what
-came back.
+- **The client's questions**, and where each one stands: `DECISIONS.md` section 1.
+- **Luca Sala's consent.** Roman wrote on 7 September 2026, and the repository stays private
+  until an answer comes back (D1).
+- **The manual's `demo/` folder** (Q2), with `demo_stack.tif` and its reference results. It
+  is not in the folder the client shared on 7 September 2026, which holds A001, his own FIJI
+  results and the paper's supplementary movie. Sala was asked for it in the mail above.
 
 ## Frame ordering in image sequences
 
@@ -240,50 +232,17 @@ and the whole settings block of the log agrees. Only the timestamp, the input pa
 elapsed time differ. His log also reads `Algorithm tool version number: 1.0`, because the
 beta never updated that string.
 
-## Where each finding lives
-
-`DECISIONS.md` says what each finding is and `LEGACY_MODE.md` shows the original source.
-This says which code it touches. Two things are being tracked at once, so they get their
-own columns: whether we **correct** it, and whether it is **written** yet.
-
-| F   | Where                                                              | Correct it? | Written         |
-|-----|--------------------------------------------------------------------|-------------|-----------------|
-| F1  | `reference.py` — `_select_legacy` vs `_select`                     | yes         | step 7          |
-| F2  | `reference.py` — the frame mapping in `detect_reference_frame`     | yes         | step 7          |
-| F3  | `traces.py` — `_frames_to_use`                                     | yes         | step 8          |
-| F4  | `traces.py` — `_mask_weight`                                       | yes         | step 9          |
-| F5  | `traces.py` — the fixed `mean + std` threshold                     | no          | step 8          |
-| F6  | `traces.py` — `_mean_change` averages the whole frame              | no          | step 9          |
-| F7  | `traces.py` — `_frames_without_reference`                          | no          | step 9          |
-| F8  | `result.py` — `time_ms`, and the figures drawn on it               | no          | steps 11 and 12 |
-| F9  | `transients.py` — `_zero_level`                                    | yes         | step 10a        |
-| F10 | `transients.py` — `_dominates_neighbours`                          | no          | step 10a        |
-| F11 | `transients.py` — `find_peaks`                                     | no          | step 10a        |
-| F12 | `transients.py` — `_range_positions`                               | yes         | step 10a        |
-| F13 | `transients.py` — `_legacy_flat_average`                           | yes         | step 10a        |
-| F14 | `transients.py` — `measure_transients`                             | no          | step 10b        |
-| F15 | `transients.py` — the fixed three-point test in `_crossing_before` | no          | step 10b        |
-| F16 | `result.py` — the output column names                              | no          | step 11         |
-| F17 | `result.py` — `original_headers`                                   | yes         | step 11         |
-| F18 | `result.py` — `_write_overview`                                    | yes         | step 11         |
-| F19 | `result.py` — `_write_overview`                                    | yes         | step 14         |
-| F20 | `result.py` — `ORIGINAL_HEADERS`                                   | no          | step 14         |
-| F21 | `result.py` — `_imagej_number`                                     | yes         | step 14         |
-| F22 | `result.py` — `file_names`                                         | yes         | steps 11 and 12 |
-| F23 | `result.py` — `comparison_curves`                                  | yes         | step 12         |
-| F24 | no code; the macro couples drawing to measuring, we do not         | no          | —               |
-| F25 | `params.py` — superseded by `Params` and YAML, per D6              | no          | step 4          |
-| F26 | no code; it is the reasoning behind D4                             | no          | —               |
-
-Two traps in reading this. "We do not correct it" does not mean there is nothing to write:
-F8 and F16 are behaviours we deliberately copy, and copying them is still work. And a
-finding's `legacy` branch sits in exactly one helper — F12 for instance branches only in
-`_range_positions`, even though the damage surfaces in `_steepest_rise`.
+## How the findings are numbered
 
 The numbers follow the order the analysis meets each finding — reference frame, mask,
 traces, transients, output — so a higher number is a later stage rather than a later
 discovery. They were renumbered into that order once the picture was complete; nothing
 outside this repo ever referred to the old ones.
+
+A finding's `legacy` branch sits in exactly one helper: F12 for instance branches only in
+`_range_positions`, even though the damage surfaces in `_steepest_rise`. Which code a
+finding touches is recorded next to the finding: `LEGACY_MODE.md`'s table for the seventeen
+quirks, and an **In the port** line in `DECISIONS.md` for the design choices.
 
 ## Marking the `legacy` branches
 

@@ -162,9 +162,10 @@ level on the way up and again on the way down, requiring **three consecutive poi
 beyond the level so that a single noisy sample cannot trigger a crossing. The time between
 the two crossings is the transient duration at that level.
 
-Two further points. A level of `p` percent is reported as the `(100-p)`-to-`(100-p)`
-transient, so the 10% level appears as "90-to-90" — the CD90 convention, measuring
-duration at 90% relaxation. And one level does double duty: its crossings also define
+Two further points. In `Overview-results.txt` a level of `p` percent is written as the
+`(100-p)`-to-`(100-p)` transient, so the 10% level appears there as "90-to-90" — the CD90
+convention, measuring duration at 90% relaxation. BoaMotion's own table names it by the
+level actually requested, `transient_10pct_ms`. And one level does double duty: its crossings also define
 time-to-peak, relaxation time and contraction duration, so contraction duration is by
 construction the same number as that level's transient. The original always uses the
 lowest level; `flank_level_index` chooses which, and defaults to it.
@@ -174,16 +175,18 @@ lowest level; `flank_level_index` chooses which, and defaults to it.
 MUSCLEMOTION is a well-designed and widely used tool, and the items below are not a
 criticism of the science. They are implementation details we had to decide how to handle
 in order to reproduce its output faithfully. With `legacy=True`, boamotion behaves as the
-original does throughout; `legacy=False` corrects all of these except F10 and F14, which
-are definitions rather than mistakes and so are kept in both modes.
+original does throughout; `legacy=False` corrects all of these except F10, F14, F16 and
+F20. The first two are definitions rather than mistakes, the other two the original's own
+conventions, so all four are kept in both modes.
 
 The F numbers are shared with [`DECISIONS.md`](../dev/DECISIONS.md), which records what each
 means for results, and with [`LEGACY_MODE.md`](../dev/LEGACY_MODE.md), which shows the
 original source and works the mechanism through.
 They follow the analysis from the reference frame through to the transients, rather than
-running in order of importance — see the closing paragraph for that. Listed here is what
-changes a number or a file you read; `DECISIONS.md` carries the complete set, including
-the ones we reproduce in both modes.
+running in order of importance — see the closing paragraph for that. Listed here are the
+seventeen quirks of the implementation, the same set `LEGACY_MODE.md` works through in the
+original's source. `DECISIONS.md` carries the complete list, adding the design choices
+behind the algorithm and the findings that needed no code.
 
 **F1 — The unity-line filter never runs.** In the reference-frame detection, the array
 holding the unity-line scores is allocated with `n_low_values` entries but the loop that
@@ -239,6 +242,11 @@ can leave the rest of the recording with baselines averaged over one or two poin
 This only matters when the lowest level is deselected, at which point time-to-peak and
 relaxation time change meaning without warning.
 
+**F16 — Percentage columns are named by `100 - p`.** The 10 % level is written to
+`Overview-results.txt` as "90-to-90 transient (ms)", the CD90 convention described under
+the measurements above. Kept in both modes; BoaMotion's own table names the same column
+`transient_10pct_ms`, by the level actually requested.
+
 **F17 — The contraction-duration column is labelled 10% whatever level was used.** The
 header is hard-coded, so if the first percentage is not 10% the results file misstates what
 was measured.
@@ -255,6 +263,12 @@ someone who already knows the column order — and anything reading it by positi
 silently when a percentage level is added or removed. It is also why F17 never reaches
 disk: the mislabelled header exists only on screen.
 
+**F20 — Peak-to-peak time is the last column, not the seventh.** A column in the macro's
+Results table appears where it is first written, and peak-to-peak time is skipped for the
+first beat, which has no predecessor — so the three amplitude columns are created ahead of
+it. Kept in both modes, and worth knowing because with `legacy=True` the file has no
+headers (F19), which leaves that order as its only description of itself.
+
 **F21 — Numbers are written with ImageJ's own formatting.** Four decimal places in the
 trace files and three in the results table, whole numbers printed bare, and any value
 past nine digits losing decimals until it fits. `legacy=False` writes them in full.
@@ -270,5 +284,5 @@ figure ends in a vertical drop that is not in the data.
 In practice F1 and F9 can genuinely change results, and F13 matters whenever the
 flat-baseline mode is used. F2 shifts numbers slightly, F3 and F12 affect edge cases only,
 F4 is a constant factor, F10 changes which beats are found at the ends of a recording, and
-F14 depends on which percentage levels are selected. F17, F18, F19, F21, F22 and F23 change
-how results are written and drawn rather than what was measured.
+F14 depends on which percentage levels are selected. F16, F17, F18, F19, F20, F21, F22
+and F23 change how results are written and drawn rather than what was measured.

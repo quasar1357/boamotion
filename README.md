@@ -26,9 +26,9 @@ from boamotion import Boa
 boa = Boa("recordings/A001", framerate=25)
 result = boa.run()
 
-result.beats              # one row per beat, with its amplitudes and durations
+result.beats  # one row per beat, with its amplitudes and durations
 result.plot_contraction()
-result.save("results")    # traces, table, figures and a log, in a folder of their own
+result.save("results")  # traces, table, figures and a log, in a folder of their own
 ```
 
 [`docs/installation.md`](docs/installation.md) covers conda and editable installs, and
