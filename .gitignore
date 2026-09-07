@@ -18,6 +18,3 @@ results/
 *.tif
 *.tiff
 *.avi
-
-# Roman's own scratch notebook for trying the API out
-notebooks/Boa_test.ipynb

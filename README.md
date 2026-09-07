@@ -8,10 +8,31 @@ ImageJ/FIJI macro that quantifies muscle contraction from video microscopy.
 The goal is to reproduce the original tool's analysis faithfully while making it usable
 from a notebook or a script, without FIJI and without a GUI.
 
-**Status: prototype complete, validated on synthetic recordings only.** Every stage of the
-analysis is implemented and tested, and a run reproduces the original macro's own FIJI
-output on a synthetic recording, table for table. It has not yet been checked on a real
-recording, so the numbers should not be relied on yet.
+**Status: prototype complete, validated against FIJI on a real recording.** Every stage of
+the analysis is implemented and tested. On a recording analysed with MUSCLEMOTION in FIJI, a
+`legacy=True` run reproduces that output exactly — the same reference frame, the same
+beats, and an identical results table; the traces differ only by the order float32
+accumulates in.
+
+## Getting started
+
+```bash
+pip install "boamotion @ git+https://github.com/quasar1357/boamotion.git"
+```
+
+```python
+from boamotion import Boa
+
+boa = Boa("recordings/A001", framerate=25)
+result = boa.run()
+
+result.beats              # one row per beat, with its amplitudes and durations
+result.plot_contraction()
+result.save("results")    # traces, table, figures and a log, in a folder of their own
+```
+
+[`docs/installation.md`](docs/installation.md) covers conda and editable installs, and
+[`docs/demo.ipynb`](docs/demo.ipynb) runs the whole analysis end to end.
 
 ## Development setup
 
@@ -36,8 +57,8 @@ How to use it, in [`docs/`](docs):
 
 How it was built, in [`dev/`](dev):
 
-- [`DECISIONS.md`](dev/DECISIONS.md) — design decisions, open questions and findings to
-  discuss with the client.
+- [`DECISIONS.md`](dev/DECISIONS.md) — design decisions, the questions still open, and
+  the findings about the original macro.
 - [`LEGACY_MODE.md`](dev/LEGACY_MODE.md) — the original macro's quirks worked through
   against its own source, and what each `legacy` branch does.
 - [`NOTES.md`](dev/NOTES.md) — working notes on the original macro and this port.

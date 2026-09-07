@@ -75,11 +75,18 @@ The reasoning is in `DECISIONS.md` (D5, D6, D9, D10); these are the rules they i
 
 The questions themselves are `DECISIONS.md` section 2; this is what we are waiting for.
 
-- **The `demo/` folder** (Q2), if their FIJI installation has it. The last one open.
+- **Q1, the frame rate, and Q5, the prototype's scope against the SLURM goal.** The
+  client's answer of 7 September 2026 passed over both. Neither blocks anything: Q1 decides
+  how much weight the timing columns can carry, Q5 only confirms a shared understanding.
+- **Q2, the manual's `demo/` folder.** The folder the client shared on 7 September 2026 is
+  pulled, and holds A001, his own FIJI results and the paper's supplementary movie — not
+  `demo_stack.tif` and its reference results, which he took "the demo data" to mean. Luca
+  Sala is now the only likely source.
+- **Luca Sala's consent.** Roman writes to him, and the repository stays private until an
+  answer comes back (D1).
 
-`A001.zip` arrived on 2 September 2026 and is compared; the first dialog's settings (Q3)
-are settled too, from the client's screenshots and from A001's own log, which records
-`guassianBlur10: No`. Neither blocks anything now.
+Everything else the 21 August mail asked is answered; `DECISIONS.md` section 2 says what
+came back.
 
 ## Frame ordering in image sequences
 
@@ -116,7 +123,7 @@ the notebook with it or the repo is inconsistent at that commit.
 |       | 12 The three figures                                                                      | done                               |
 |       | 13 `Boa`, the user-facing class, and logging                                              | done                               |
 | **E** | 14 Validation against FIJI output, and the `validation/` tooling for it                   | done                               |
-|       | 15 Example notebook on the client's recording                                             | A001 in hand, notebook to write    |
+|       | 15 Example notebook on the client's recording                                             | done                               |
 |       | 16 Minimal docs overhaul: `docs/index.md`, installation, one pass over the four documents | done                               |
 |       | — prototype complete —                                                                    |                                    |
 | **F** | 17 Other input formats: TIFF stacks, PNG, AVI                                             |                                    |
@@ -215,6 +222,23 @@ The client also sent the MUSCLEMOTION paper's supplementary movie, in
 542x576, uint8, with the paper and its figures. It comes with no settings and no results,
 so it is a second recording to run on, not a second reference to check against. A001 stays
 the reference.
+
+## Which version we ported
+
+The client runs "V1.1 beta" (7 September 2026), not the v1.0 the port was read from. Both
+files sit in `../MUSCLEMOTION/`, and the entire difference between them is nine hunks of one
+mechanical edit: `newArray(<expression>)` becomes `arrayLength=<expression>` followed by
+`newArray(arrayLength)`. The expressions themselves are unchanged, nothing else in 1300
+lines moves, and the beta still sets `versionNumber="1.0"`, so a log file cannot tell the
+two apart either. The port reproduces both, and A001 matching exactly is not an accident of
+version.
+
+Confirmed on the output as well as on the source. The client ran A001 through FIJI himself
+with v1.1 beta and sent the result on 7 September 2026: every file matches ours from v1.0
+byte for byte — `Overview-results.txt`, both traces and all three JPEGs share our MD5s,
+and the whole settings block of the log agrees. Only the timestamp, the input path and the
+elapsed time differ. His log also reads `Algorithm tool version number: 1.0`, because the
+beta never updated that string.
 
 ## Where each finding lives
 

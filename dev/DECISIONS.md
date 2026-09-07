@@ -11,7 +11,7 @@ Status of each decision: **taken** (we have decided, client may still object),
 
 ## 1. Decisions and trade-offs
 
-### D1 — Licence: GPL-3.0 · *taken, needs confirming*
+### D1 — Licence: GPL-3.0 · *taken, confirmed*
 
 The original MUSCLEMOTION macro is GPL-3.0. This is a deliberate port written after
 reading that source, so an independent-implementation argument would be weak. We therefore
@@ -20,16 +20,17 @@ release `boamotion` under GPL-3.0 as well.
 **Consequence for the client:** anything distributing this code, or software derived from
 it, inherits GPL-3.0 obligations. If the group ever intends commercial use, or embedding
 the analysis in a closed pipeline, this needs revisiting — the alternative is asking van
-Meer and Sala to relicense. Nothing is public yet, so the decision is still reversible.
+Meer and Sala to relicense. The client confirmed on 7 September 2026 that no commercial
+use is intended and that GPL-3.0 is what they want.
 
-### D2 — Name: `boamotion` · *taken*
+### D2 — Name: `boamotion` · *taken, confirmed*
 
 A boa is a constrictor, which is what the tool measures. `musclemotion`, `myopy` and
 `pyomyo` are all taken on PyPI; `pyomyo` in particular is an existing muscle-signal
 (EMG armband) package, so reusing it would actively mislead. `cobra` was considered and
 rejected because COBRApy is a well-known package in the same scientific-Python space.
 
-### D3 — Faithful port, with the original's quirks reproducible · *proposed*
+### D3 — Faithful port, with the original's quirks reproducible · *taken, confirmed*
 
 The prototype's acceptance criterion is "same numbers as FIJI". Several genuine bugs in
 the original (section 3) change those numbers. Both behaviours are implemented and tested,
@@ -87,13 +88,15 @@ in ImageJ's global preferences, which makes an analysis hard to reproduce months
 silently couples unrelated runs. Explicit parameter files are more typing and much more
 defensible.
 
-### D7 — Whole-frame measurement, with an ROI option planned · *proposed*
+### D7 — Whole-frame measurement, with an ROI option planned · *taken*
 
 The macro measures over the entire frame, so users currently crop in FIJI beforehand to
 exclude non-contracting regions. We will offer an explicit region-of-interest parameter
 instead (deferred to after the prototype, see section 4). **Question for the client: do
-you currently crop before running the macro?** If so this is not optional, it is part of
-reproducing their workflow.
+you currently crop before running the macro?** Answered on 7 September 2026: they crop
+the images before starting the analysis and never select an ROI, so the macro always
+measures a whole frame that is already the region of interest. Whole-frame measurement
+is their workflow, and the ROI parameter is an addition rather than a requirement.
 
 ### D8 — Small, conservative dependency set · *taken*
 
@@ -186,22 +189,27 @@ sloped. Only their horizontal extent means anything.
 
 ## 2. Open questions for the client
 
-- **Q1 — Frame rate.** The example recording is 25 fps. The MUSCLEMOTION manual requires
+The client answered on 7 September 2026. Q1 and Q5 are the two he passed over.
+
+- **Q1 — Frame rate** · *open*. The example recording is 25 fps. The MUSCLEMOTION manual requires
   60–75 fps minimum, and the macro itself prints `WARNING: Recorded framerate is low`
   below 50 fps. At 25 fps the timing resolution is 40 ms per frame, which meaningfully
   limits the precision of time-to-peak and relaxation time. Is 25 fps the standard for
   this assay, and are the temporal parameters being used quantitatively? (Amplitude
   measures are much less affected than timing measures.)
-- **Q2 — Demo data.** The manual describes a `demo/` folder containing `demo_stack.tif`
+- **Q2 — Demo data** · *open*. The folder he shared on 7 September 2026 holds the
+  paper's supplementary movie, which is not this. The manual describes a `demo/` folder containing `demo_stack.tif`
   and a `demo_results/` folder with correct reference outputs. It is *not* in the public
   GitHub repository. Does your FIJI installation have it? It would let us validate against
   known-good numbers immediately.
-- **Q3 — Settings.** The screenshot shows only the third wizard dialog. What did you select
+- **Q3 — Settings** · *answered*: version 1.1 beta, Gaussian blur off, no ROI. The
+  assumptions below hold, and v1.1 beta computes exactly what the v1.0 we ported does
+  (`NOTES.md`). The screenshot shows only the third wizard dialog. What did you select
   in the first one — specifically Gaussian blur, noise reduction, and reference-frame
   detection? We are currently assuming the defaults (blur off, noise reduction on,
   automatic reference frame).
-- **Q4 — Cropping.** See D7.
-- **Q5 — Scope.** "Runs on the SLURM cluster" was the original motivation, but batch
+- **Q4 — Cropping** · *answered*, they crop beforehand. See D7.
+- **Q5 — Scope** · *open*. "Runs on the SLURM cluster" was the original motivation, but batch
   processing and performance work are in the Outlook list, not the prototype. Worth
   confirming this is understood, since it is the one place where the stated prototype and
   the original project goal diverge.
