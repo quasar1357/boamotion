@@ -21,7 +21,7 @@ accumulates in.
 ## Getting started
 
 ```bash
-pip install "boamotion @ git+https://github.com/quasar1357/boamotion.git"
+pip install git+https://github.com/quasar1357/boamotion.git
 ```
 
 ```python

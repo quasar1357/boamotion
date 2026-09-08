@@ -6,7 +6,7 @@ pandas, matplotlib and pyyaml — is installed with it.
 ## With pip
 
 ```bash
-pip install "boamotion @ git+https://github.com/quasar1357/boamotion.git"
+pip install git+https://github.com/quasar1357/boamotion.git
 ```
 
 ## From a clone
