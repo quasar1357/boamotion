@@ -73,12 +73,18 @@ The reasoning is in `DECISIONS.md` (D5, D6, D9, D10); these are the rules they i
 
 ## Open items
 
-- **The client's questions**, and where each one stands: `DECISIONS.md` section 1.
-- **Luca Sala's consent.** Roman wrote on 7 September 2026, and the repository stays private
-  until an answer comes back (D1).
-- **The manual's `demo/` folder** (Q2), with `demo_stack.tif` and its reference results. It
-  is not in the folder the client shared on 7 September 2026, which holds A001, his own FIJI
-  results and the paper's supplementary movie. Sala was asked for it in the mail above.
+- **The client's questions**, and where each one stands: `DECISIONS.md` section 1. Q1 and
+  Q6 are the two still open.
+- **What Luca Sala asked for**, answering on 8 September 2026. He consents to the release
+  under GPL-3.0 with the attribution described, wants to know what the port adjusts —
+  `DECISIONS.md` section 4 for the what, `LEGACY_MODE.md` for the why — and asked for a name
+  that shows the derivation without implying an official continuation. He also has a Python
+  port of his own, unpublished and used in his lab.
+- **The demo data he sent** (Q2): six nifedipine recordings at 100 fps, `demo_results/`
+  holding the authors' own FIJI output for each. They are AVI, so nothing can run on them
+  until that format is supported. It is the strongest validation set available — a
+  different frame rate, a different threshold, the high-frequency baseline on, and 29 beats
+  per recording where A001 has nine.
 
 ## Frame ordering in image sequences
 
@@ -223,7 +229,8 @@ mechanical edit: `newArray(<expression>)` becomes `arrayLength=<expression>` fol
 `newArray(arrayLength)`. The expressions themselves are unchanged, nothing else in 1300
 lines moves, and the beta still sets `versionNumber="1.0"`, so a log file cannot tell the
 two apart either. The port reproduces both, and A001 matching exactly is not an accident of
-version.
+version. Sala's own copy of v1.0, sent on 8 September 2026, is byte-identical to ours
+apart from line endings.
 
 Confirmed on the output as well as on the source. The client ran A001 through FIJI himself
 with v1.1 beta and sent the result on 7 September 2026: every file matches ours from v1.0

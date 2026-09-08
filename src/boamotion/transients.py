@@ -1,7 +1,7 @@
 """Stage 4: finding the beats in a contraction trace, and measuring each one.
 
 Positions here are indices into the trace, which holds one point fewer than the
-recording because the reference frame has been removed. See LEGACY_MODE.md for the
+recording because the reference frame has been removed. See `dev/LEGACY_MODE.md` for the
 original's behaviour that `legacy` reproduces.
 """
 

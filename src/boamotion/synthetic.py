@@ -1,7 +1,7 @@
 """A synthetic beating recording with known ground truth.
 
-Used to test the analysis against answers we chose ourselves. It also stands in for
-the demo dataset described in the MUSCLEMOTION manual, which is not published.
+Used to test the analysis against known answers, and as a stand-in for the demo dataset
+the MUSCLEMOTION manual describes, which its public repository does not include.
 """
 
 from __future__ import annotations

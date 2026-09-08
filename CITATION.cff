@@ -1,0 +1,83 @@
+cff-version: 1.2.0
+message: >-
+  If you use BoaMotion, please cite both this software and the MUSCLEMOTION paper it is
+  ported from.
+title: BoaMotion
+abstract: >-
+  A Python port of the MUSCLEMOTION ImageJ/FIJI macro, measuring the strength and speed of
+  muscle contraction from video microscopy recordings.
+type: software
+version: 0.1.0
+license: GPL-3.0-only
+repository-code: "https://github.com/quasar1357/boamotion"
+authors:
+  - family-names: Schwob
+    given-names: Roman
+    affiliation: "Data Science Lab, University of Bern"
+references:
+  - type: article
+    title: >-
+      MUSCLEMOTION: A Versatile Open Software Tool to Quantify Cardiomyocyte and Cardiac
+      Muscle Contraction In Vitro and In Vivo
+    journal: Circulation Research
+    year: 2018
+    volume: 122
+    issue: 3
+    start: e5
+    end: e16
+    doi: 10.1161/CIRCRESAHA.117.312067
+    authors:
+      - family-names: Sala
+        given-names: Luca
+      - family-names: van Meer
+        given-names: Berend J.
+      - family-names: Tertoolen
+        given-names: Leon G. J.
+      - family-names: Bakkers
+        given-names: Jeroen
+      - family-names: Bellin
+        given-names: Milena
+      - family-names: Davis
+        given-names: Richard P.
+      - family-names: Denning
+        given-names: Chris
+      - family-names: Dieben
+        given-names: Michel A. E.
+      - family-names: Eschenhagen
+        given-names: Thomas
+      - family-names: Giacomelli
+        given-names: Elisa
+      - family-names: Grandela
+        given-names: Catarina
+      - family-names: Hansen
+        given-names: Arne
+      - family-names: Holman
+        given-names: Eduard R.
+      - family-names: Jongbloed
+        given-names: Monique R. M.
+      - family-names: Kamel
+        given-names: Sarah M.
+      - family-names: Koopman
+        given-names: Charlotte D.
+      - family-names: Lachaud
+        given-names: Quentin
+      - family-names: Mannhardt
+        given-names: Ingra
+      - family-names: Mol
+        given-names: Mervyn P. H.
+      - family-names: Mosqueira
+        given-names: Diogo
+      - family-names: Orlova
+        given-names: Valeria V.
+      - family-names: Passier
+        given-names: Robert
+      - family-names: Ribeiro
+        given-names: Marcelo C.
+      - family-names: Saleem
+        given-names: Umber
+      - family-names: Smith
+        given-names: Godfrey L.
+      - family-names: Burton
+        given-names: Francis L.
+      - family-names: Mummery
+        given-names: Christine L.

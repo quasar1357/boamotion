@@ -1,14 +1,15 @@
 """Collecting a finished analysis, and writing it out.
 
 The original macro's output files are reproduced by name and by format, so its results
-and ours can be diffed directly. The log file follows the logging in step 13.
+and BoaMotion's can be diffed directly.
 
 Figures are built with matplotlib's `Figure` directly rather than through `pyplot`, so
 nothing here needs a display or touches global state — which is what lets the same code
 run on a compute node and inside a notebook.
 
-Alongside them we write the effective parameters and a tidy CSV, which the original has
-no equivalent of. Those use our own column names; the reproduced files use the original's.
+Alongside them go the parameters used and a tidy CSV, which the original has no
+equivalent of. Those carry BoaMotion's column names; the reproduced files keep the
+original's.
 """
 
 from __future__ import annotations
@@ -191,7 +192,7 @@ class Result:
 
 
 def original_headers(params: Params) -> dict[str, str]:
-    """Map our column names onto the original's, in the order the macro writes them.
+    """Map the column names onto the original's, in the order the macro writes them.
 
     The macro hard-codes "10% above baseline" whatever the flank level actually is, so
     the header can disagree with the number beneath it.
@@ -292,7 +293,7 @@ def _write_trace(path: Path, times: np.ndarray, values: np.ndarray, legacy: bool
 
 
 def _write_overview(path: Path, beats: pd.DataFrame, params: Params) -> None:
-    """The original's Results table: our columns renamed, ours alone dropped."""
+    """The original's Results table: the shared columns renamed, the extra ones dropped."""
     headers = original_headers(params)
     table = beats.reindex(columns=list(headers)).rename(columns=headers)
 
@@ -301,8 +302,8 @@ def _write_overview(path: Path, beats: pd.DataFrame, params: Params) -> None:
     if params.legacy:
         table = table.fillna(0)
 
-    # Every other file we write goes through text mode and so follows the platform's
-    # line ending, as ImageJ does. Say so here too, or this one file disagrees.
+    # Every other file goes through text mode and so follows the platform's line ending,
+    # as ImageJ does. Say so here too, or this one file disagrees.
     endings = {"lineterminator": os.linesep}
 
     # legacy: the macro's run("Input/Output...", "jpeg=100") clears every checkbox it

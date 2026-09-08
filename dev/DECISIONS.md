@@ -18,9 +18,9 @@ what came back.
   limits the precision of time-to-peak and relaxation time. Is 25 fps the standard for
   this assay, and are the temporal parameters being used quantitatively? (Amplitude
   measures are much less affected than timing measures.)
-- **Q2 — Demo data** · *open, but no longer with him*. The folder he shared on
-  7 September 2026 holds the paper's supplementary movie, which is not this. Luca Sala
-  was asked for it instead. The manual describes a `demo/` folder containing `demo_stack.tif`
+- **Q2 — Demo data** · *answered*, by Luca Sala on 8 September 2026 rather than by
+  the client: six nifedipine recordings at 100 fps with the authors' own FIJI results.
+  They are AVI, so they cannot be read until that format is supported (section 2). The manual describes a `demo/` folder containing `demo_stack.tif`
   and a `demo_results/` folder with correct reference outputs. It is *not* in the public
   GitHub repository. Does your FIJI installation have it? It would let us validate against
   known-good numbers immediately.

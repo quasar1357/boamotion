@@ -1,6 +1,6 @@
 """Stage 1: choosing the reference frame.
 
-The frame every other frame is measured against. See HOW_IT_WORKS.md for the idea
+The frame every other frame is measured against. See `docs/how-it-works.md` for the idea
 behind the phase-plane method and for what `legacy` changes.
 """
 

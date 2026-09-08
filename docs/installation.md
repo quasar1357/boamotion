@@ -9,8 +9,6 @@ pandas, matplotlib and pyyaml — is installed with it.
 pip install "boamotion @ git+https://github.com/quasar1357/boamotion.git"
 ```
 
-The repository is private, so this needs an account with access to it.
-
 ## From a clone
 
 ```bash

@@ -5,6 +5,9 @@ language, and section 4 of [`DECISIONS.md`](DECISIONS.md) records what each mean
 results. This file is the working reference behind both: for each one, the actual FIJI
 macro source, why it behaves as it does, and what `boamotion` does in either mode.
 
+MUSCLEMOTION is a well-designed and widely used tool, and nothing below is a criticism of
+the science; these are implementation details a port has to decide how to handle.
+
 It is aimed at whoever maintains the port — including us, months from now, trying to
 remember why a function has two branches. Line numbers refer to
 `MUSCLEMOTION v1-1beta.ijm`.

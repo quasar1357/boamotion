@@ -23,7 +23,7 @@ from boamotion.synthetic import SyntheticRecording, synthetic_recording
 from boamotion.traces import build_motion_pixel_mask, measure_contraction, measure_speed
 from boamotion.transients import find_baselines, find_peaks, measure_transients
 
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 __all__ = [
     "Boa",

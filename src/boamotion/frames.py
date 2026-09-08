@@ -1,7 +1,7 @@
 """Reading recordings frame by frame.
 
-Only a directory of single-page TIFF files is supported so far; other formats the
-original macro accepts (TIFF stacks, PNG sequences, uncompressed AVI) come later.
+Only a directory of single-page TIFF files is supported; the other formats the original
+macro accepts (TIFF stacks, PNG sequences, uncompressed AVI) are not implemented yet.
 """
 
 from __future__ import annotations
@@ -111,7 +111,7 @@ def _find_tiffs(directory: Path) -> list[Path]:
     if not directory.is_dir():
         raise NotADirectoryError(
             f"{directory} is a file. Only a directory holding one TIFF per frame is "
-            f"supported so far; TIFF stacks, PNG sequences and AVI come later"
+            f"supported; TIFF stacks, PNG sequences and AVI are not implemented yet"
         )
     return [p for p in directory.iterdir() if p.is_file() and p.suffix.lower() in TIFF_SUFFIXES]
 
