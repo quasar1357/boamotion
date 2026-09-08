@@ -280,7 +280,7 @@ def test_the_shortage_warning_names_the_beat_that_caused_it(caplog):
     noisy, _, peaks = drifting_rest_train()
     with caplog.at_level(logging.WARNING):
         find_baselines(noisy, peaks, high_freq_baseline=False, legacy=True)
-    assert "before peak 0" in caplog.text
+    assert "before beat 1" in caplog.text
 
 
 # --- measuring each beat -------------------------------------------------------------

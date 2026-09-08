@@ -414,7 +414,9 @@ def _flat_baselines(
             fallback = _lowest_before(trace, positions, k)
             baseline = float(np.mean(flat[-baseline_n_points:])) if flat else fallback
             if not flat:
-                logger.warning("No flat points before peak %d; using the lowest point instead", k)
+                logger.warning(
+                    "No flat points before beat %d; using the lowest point instead", k + 1
+                )
         baselines.append(baseline)
 
     return baselines
@@ -434,9 +436,9 @@ def _legacy_flat_average(flat: list[float], n_points: int, k: int) -> tuple[floa
         kept = flat
         n_points = length
         logger.warning(
-            "Only %d flat point(s) before peak %d; averaging %d point(s) from here on",
+            "Only %d flat point(s) before beat %d; averaging %d point(s) from here on",
             len(flat),
-            k,
+            k + 1,
             n_points,
         )
 

@@ -57,6 +57,8 @@ Agreed as out of prototype scope, listed so nothing is lost:
 - SLURM convenience: an array-job template and a worked example. A job can run
   `boamotion` as it stands (Q5); what is missing is the scaffolding around it.
 - Performance work: chunked or parallel reading, and any per-recording parallelism (D9).
+  The concrete first step is one pass instead of three: the mask, the contraction trace
+  and the speed trace each read every frame separately today.
 - Drift and artefact correction.
 - The published documentation site. The prototype ships written documentation; building
   it into a book is deferred (step 23).
