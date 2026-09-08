@@ -59,6 +59,8 @@ Agreed as out of prototype scope, listed so nothing is lost:
 - Performance work: chunked or parallel reading, and any per-recording parallelism (D9).
   The concrete first step is one pass instead of three: the mask, the contraction trace
   and the speed trace each read every frame separately today.
+- The original's other markers on the contraction figure: the crossings of every
+  percentage level, and the points a baseline was averaged from (D15).
 - Drift and artefact correction.
 - The published documentation site. The prototype ships written documentation; building
   it into a book is deferred (step 23).
