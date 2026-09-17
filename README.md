@@ -75,7 +75,8 @@ Center / University of Glasgow, 2017), published as Sala & van Meer et al.,
 [`CITATION.cff`](CITATION.cff) for how to cite both.
 
 This is an independent reimplementation, not the authors' own continuation of
-MUSCLEMOTION. Luca Sala consented to its release in September 2026.
+MUSCLEMOTION. Its developers, Luca Sala and Berend van Meer, consented to its release in
+September 2026.
 
 Copyright © 2026 Roman Schwob. The original is GPL-3.0 and so is this port: see
 [`LICENSE`](LICENSE) and the licence note in [`DECISIONS.md`](dev/DECISIONS.md).

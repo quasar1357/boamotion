@@ -8,11 +8,14 @@ particular is observations about the original macro that the client should know 
 
 ## 1. Questions for the client, and what came back
 
-Open with him: **Q1**, asked again, and **Q6**, asked for the first time, both in the mail
-of 7 September 2026. The rest are answered or settled, and are kept here as the record of
-what came back.
+Nothing is open. The client answered the last two on 16 September 2026; everything is
+kept here as the record of what came back.
 
-- **Q1 — Frame rate** · *open*. The example recording is 25 fps. The MUSCLEMOTION manual requires
+- **Q1 — Frame rate** · *answered*: 25 fps is not the standard, it is the limit of the
+  automated microscope they use (an Acquifer); recordings would normally be above 100 fps.
+  The parameter they mainly want is peak-to-peak time, for which they deem 25 fps enough
+  — and it is the timing measure least affected, since the 40 ms resolution is small
+  against a beat interval of several seconds. The example recording is 25 fps. The MUSCLEMOTION manual requires
   60–75 fps minimum, and the macro itself prints `WARNING: Recorded framerate is low`
   below 50 fps. At 25 fps the timing resolution is 40 ms per frame, which meaningfully
   limits the precision of time-to-peak and relaxation time. Is 25 fps the standard for
@@ -37,9 +40,10 @@ what came back.
   array over a list of them. Nothing in the library is cluster-hostile — one process, no
   GUI, no FIJI. What is deferred is convenience and speed, not capability: a batch driver, a
   CLI, an array-job template and any optimisation (section 2).
-- **Q6 — A001 in public documentation** · *open*. The published examples run on a
-  synthetic recording so that any reader can re-run them, and no client data is in the
-  repository. May A001 be shown there instead, or alongside? Asked on 7 September 2026.
+- **Q6 — A001 in public documentation** · *answered*: A001 may be shared publicly. The
+  published examples run on a synthetic recording so that any reader can re-run them, and
+  no client data is in the repository; A001 is too large to ship in it, so showing it means
+  hosting it elsewhere. Permission is there; nothing is decided about using it.
 
 ---
 
@@ -82,7 +86,8 @@ release `boamotion` under GPL-3.0 as well.
 it, inherits GPL-3.0 obligations. If the group ever intends commercial use, or embedding
 the analysis in a closed pipeline, this needs revisiting — the alternative is asking van
 Meer and Sala to relicense. The client confirmed on 7 September 2026 that no commercial
-use is intended and that GPL-3.0 is what they want.
+use is intended and that GPL-3.0 is what they want. Luca Sala consented to the release on
+8 September 2026, and Berend van Meer, informed by him, on 16 September 2026.
 
 ### D2 — Name: `boamotion` · *taken, confirmed*
 

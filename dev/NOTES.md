@@ -73,8 +73,9 @@ The reasoning is in `DECISIONS.md` (D5, D6, D9, D10); these are the rules they i
 
 ## Open items
 
-- **The client's questions**, and where each one stands: `DECISIONS.md` section 1. Q1 and
-  Q6 are the two still open.
+- **The client's questions** are all answered; `DECISIONS.md` section 1 is the record. A
+  meeting is planned for late September or early October 2026: the demo notebook, the *proposed* decisions,
+  and how to go on.
 - **What Luca Sala asked for**, answering on 8 September 2026. He consents to the release
   under GPL-3.0 with the attribution described, wants to know what the port adjusts —
   `DECISIONS.md` section 4 for the what, `LEGACY_MODE.md` for the why — and asked for a name
