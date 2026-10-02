@@ -73,9 +73,10 @@ The reasoning is in `DECISIONS.md` (D5, D6, D9, D10); these are the rules they i
 
 ## Open items
 
-- **The client's questions** are all answered; `DECISIONS.md` section 1 is the record. A
-  meeting is planned for late September or early October 2026: the demo notebook, the *proposed* decisions,
-  and how to go on.
+- **The client's questions** are all answered; `DECISIONS.md` section 1 is the record. The
+  meeting on 2 October 2026 went well: he likes the prototype and will look for funding to
+  take it further. The deferred items and the decisions behind them were walked through for
+  direction only — prioritising them properly waits until the project is funded.
 - **What Luca Sala asked for**, answering on 8 September 2026. He consents to the release
   under GPL-3.0 with the attribution described, wants to know what the port adjusts —
   `DECISIONS.md` section 4 for the what, `LEGACY_MODE.md` for the why — and asked for a name

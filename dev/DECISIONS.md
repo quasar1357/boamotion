@@ -51,12 +51,20 @@ kept here as the record of what came back.
 
 Agreed as out of prototype scope, listed so nothing is lost:
 
+- Make the settings of a run easy to inspect before it runs. Raised in the meeting of
+  2 October 2026: `boa.params.to_dict()` works but reads as digging into the object. Open
+  whether the answer is a method on `Boa`, a readable `__repr__` on `Params`, or only
+  documentation — a second way to do one thing is worse than none.
 - Input formats other than a TIFF image sequence directory (TIFF stacks, PNG sequences,
   uncompressed AVI).
 - Gaussian blur preprocessing (only relevant for samples with highly repetitive
   structures, such as adult cardiomyocytes).
 - Region-of-interest / cropping parameter (D7).
-- Interactive reference-frame selection (D5).
+- Interactive reference-frame selection, and a graphical interface more generally — a
+  notebook widget, or a napari plugin. On top of the package as an optional extra, never a
+  dependency of the analysis path, which stays headless (D5).
+- Whether to reconsider 1-based frame numbering (D11). It runs through every parameter and
+  every conversion, so it should only change if the benefit is large.
 - Batch processing over directories, and the command-line interface.
 - SLURM convenience: an array-job template and a worked example. A job can run
   `boamotion` as it stands (Q5); what is missing is the scaffolding around it.
@@ -71,12 +79,12 @@ Agreed as out of prototype scope, listed so nothing is lost:
 
 ---
 
-## 3. Decisions and trade-offs
+## 3. Taken decisions and trade-offs
 
-Status of each decision: **taken** (we have decided, client may still object),
-**proposed** (our recommendation, awaiting client input) or **open**.
+Each one describes BoaMotion as it is built. *Confirmed* marks the three the client agreed
+to explicitly; the rest he has seen and not contested.
 
-### D1 — Licence: GPL-3.0 · *taken, confirmed*
+### D1 — Licence: GPL-3.0 · *confirmed*
 
 The original MUSCLEMOTION macro is GPL-3.0. This is a deliberate port written after
 reading that source, so an independent-implementation argument would be weak. We therefore
@@ -89,14 +97,14 @@ Meer and Sala to relicense. The client confirmed on 7 September 2026 that no com
 use is intended and that GPL-3.0 is what they want. Luca Sala consented to the release on
 8 September 2026, and Berend van Meer, informed by him, on 16 September 2026.
 
-### D2 — Name: `boamotion` · *taken, confirmed*
+### D2 — Name: `boamotion` · *confirmed*
 
 A boa is a constrictor, which is what the tool measures. `musclemotion`, `myopy` and
 `pyomyo` are all taken on PyPI; `pyomyo` in particular is an existing muscle-signal
 (EMG armband) package, so reusing it would actively mislead. `cobra` was considered and
 rejected because COBRApy is a well-known package in the same scientific-Python space.
 
-### D3 — Faithful port, with the original's quirks reproducible · *taken, confirmed*
+### D3 — Faithful port, with the original's quirks reproducible · *confirmed*
 
 The prototype's acceptance criterion is "same numbers as FIJI". Several genuine bugs in
 the original (section 4) change those numbers. Both behaviours are implemented and tested,
@@ -115,13 +123,13 @@ numbers changed silently. The cost of defaulting to the corrected mode is that a
 up carelessly will not match old FIJI output; that is the intended reading, but it is
 worth stating plainly, and it is why every finding is listed individually in section 4.
 
-### D4 — Reimplement the original's algorithms rather than substituting library equivalents · *taken*
+### D4 — Reimplement the original's algorithms rather than substituting library equivalents
 
 Where the macro has a bespoke algorithm (peak detection, baseline finding, flank
 crossings), we port it literally instead of calling a standard library function. See F26
 for why this matters.
 
-### D5 — No video display; no viewer dependency · *proposed*
+### D5 — No video display; no viewer dependency
 
 The macro runs almost entirely with image windows hidden (`setBatchMode(true)`). FIJI is
 used as an image reader, an array-arithmetic engine, a plot renderer and a dialog toolkit
@@ -133,11 +141,11 @@ default and a plain `reference_frame=<n>` parameter lets a user who has already 
 the movie pass the number directly. This keeps the package runnable headless on a compute
 node, which is a hard requirement for the cluster.
 
-**Trade-off:** users who relied on eyeballing the movie lose that step for now. An
-interactive picker can be added later (a notebook slider works on the cluster; napari
-would be a local-only optional extra).
+**Trade-off:** users who relied on eyeballing the movie lose that step. Anything
+interactive — a picker, or a GUI — belongs on top of the package rather than inside it,
+and is listed in section 2.
 
-### D6 — Parameters: one object, settable directly or loaded from a file · *proposed*
+### D6 — Parameters: one object, settable directly or loaded from a file
 
 A single parameter object carries every setting with the original's defaults. It can be
 constructed with keyword arguments, modified attribute by attribute or several at a time
@@ -154,7 +162,7 @@ in ImageJ's global preferences, which makes an analysis hard to reproduce months
 silently couples unrelated runs. Explicit parameter files are more typing and much more
 defensible.
 
-### D7 — Whole-frame measurement, with an ROI option planned · *taken*
+### D7 — Whole-frame measurement, with an ROI option planned
 
 The macro measures over the entire frame, so users currently crop in FIJI beforehand to
 exclude non-contracting regions. We will offer an explicit region-of-interest parameter
@@ -164,13 +172,13 @@ the images before starting the analysis and never select an ROI, so the macro al
 measures a whole frame that is already the region of interest. Whole-frame measurement
 is their workflow, and the ROI parameter is an addition rather than a requirement.
 
-### D8 — Small, conservative dependency set · *taken*
+### D8 — Small, conservative dependency set
 
 `numpy`, `tifffile`, `pandas`, `matplotlib`, `pyyaml`. Notably **not** OpenCV: the earlier
 Python attempt pulls in all of OpenCV for one absolute-difference call that numpy performs
 natively and identically. Video-format support (AVI) will be an optional extra.
 
-### D9 — Parallelism across recordings, not within one · *proposed*
+### D9 — Parallelism across recordings, not within one
 
 For cluster use, one recording per SLURM array task is simpler, more robust and scales
 better than threading inside a single analysis. The core therefore stays single-threaded.
@@ -180,7 +188,7 @@ macro currently opens and closes an ImageJ window per frame, and the Python equi
 a couple of array passes, we expect a large speedup regardless; per-recording parallelism
 would be premature optimisation.
 
-### D10 — Outputs: original format plus a machine-readable one · *proposed*
+### D10 — Outputs: original format plus a machine-readable one
 
 We reproduce the original's seven output files and their names, so results can be diffed
 directly against FIJI output, and additionally write a tidy CSV and the parameter dump.
@@ -199,7 +207,7 @@ reported as a warning — collected in `run-summary.txt` and in the log. Writing
 "effective" parameter file was rejected because it would mean restating each stage's
 clamping rules in a second place, where they could drift apart.
 
-### D11 — Frame numbers are 1-based · *proposed*
+### D11 — Frame numbers are 1-based
 
 Every parameter that refers to a frame (`reference_frame`, `ref_search_start`,
 `mask_start_frame`, …) counts from 1, matching FIJI and the manual. Internally the code
@@ -210,14 +218,14 @@ chose it because the alternative guarantees off-by-one confusion at exactly the 
 hurts most — when comparing our output against FIJI's, or when a user reads a frame number
 off a FIJI window and types it in. A frame number now means the same thing in both tools.
 
-### D12 — Parameter names follow Python conventions · *taken*
+### D12 — Parameter names follow Python conventions
 
 `speedWindow` becomes `speed_window`, `PeakDetectionWindow` becomes `peak_window`, and so
 on. The original macro name is documented alongside each parameter so the two can be
 cross-referenced. Keeping the original spellings would have mixed old and new naming in
 the same namespace and made a later rename harder to carry out safely.
 
-### D13 — Analysis functions take explicit keyword arguments, not the `Params` object · *taken*
+### D13 — Analysis functions take explicit keyword arguments, not the `Params` object
 
 `detect_reference_frame(frames, *, speed_window=2, ...)` rather than
 `detect_reference_frame(frames, params)`. Each function then states exactly what it
@@ -228,13 +236,13 @@ user-facing class unpacks `Params` into these calls.
 every function's signature and asserts each default equals the matching `Params` field,
 which turns drift into a CI failure rather than a silent inconsistency.
 
-### D14 — The user-facing class is called `Boa` · *taken*
+### D14 — The user-facing class is called `Boa`
 
 `Boa("recordings/A001", framerate=25).run()`. Short, memorable, and unambiguous inside a
 package called `boamotion`. `Recording` was rejected because `FrameSequence` and
 `SyntheticRecording` already occupy that concept.
 
-### D15 — The contraction figure omits the original's transient markers, for now · *proposed*
+### D15 — The contraction figure omits the original's transient markers
 
 The original draws three kinds of overlay on the contraction plot: a vertical line from
 each baseline up to its peak, a line joining the two crossings of every percentage level,
